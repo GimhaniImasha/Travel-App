@@ -63,11 +63,6 @@ export default function HomeScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.greeting}>Hello, {user?.firstName || 'Traveler'}!</Text>
-        <Text style={styles.subtitle}>Where would you like to go?</Text>
-      </View>
-
       <View style={styles.searchContainer}>
         <TextInput
           style={styles.searchInput}
@@ -109,20 +104,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  header: {
-    padding: spacing.lg,
-    backgroundColor: colors.primary,
-  },
-  greeting: {
-    fontSize: fontSize.xxl,
-    fontWeight: 'bold',
-    color: colors.textLight,
-  },
-  subtitle: {
-    fontSize: fontSize.md,
-    color: colors.textLight,
-    marginTop: spacing.xs,
   },
   searchContainer: {
     flexDirection: 'row',

@@ -56,12 +56,13 @@ export default function FavoritesScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Favourites</Text>
-        <Text style={styles.headerSubtitle}>
-          {favourites.length} {favourites.length === 1 ? 'place' : 'places'} saved
-        </Text>
-      </View>
+      {favourites.length > 0 && (
+        <View style={styles.infoBar}>
+          <Text style={styles.infoText}>
+            {favourites.length} {favourites.length === 1 ? 'place' : 'places'} saved
+          </Text>
+        </View>
+      )}
 
       {favourites.length > 0 ? (
         <FlatList
@@ -87,19 +88,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  header: {
-    padding: spacing.lg,
-    backgroundColor: colors.primary,
+  infoBar: {
+    padding: spacing.md,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
   },
-  headerTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: 'bold',
-    color: colors.textLight,
-  },
-  headerSubtitle: {
-    fontSize: fontSize.md,
-    color: colors.textLight,
-    marginTop: spacing.xs,
+  infoText: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    textAlign: 'center',
   },
   listContainer: {
     padding: spacing.md,

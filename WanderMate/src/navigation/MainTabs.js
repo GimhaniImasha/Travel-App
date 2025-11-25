@@ -1,6 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from '../screens/Home/HomeScreen';
 import DetailsScreen from '../screens/Details/DetailsScreen';
@@ -12,10 +13,37 @@ const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
 
 function HomeStackNavigator() {
+  const { user } = useSelector((state) => state.auth);
+  const firstName = user?.firstName || 'Traveler';
+
   return (
-    <HomeStack.Navigator screenOptions={{ headerShown: false }}>
-      <HomeStack.Screen name="HomeMain" component={HomeScreen} />
-      <HomeStack.Screen name="Details" component={DetailsScreen} />
+    <HomeStack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: colors.primary,
+        },
+        headerTintColor: colors.textLight,
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+      }}
+    >
+      <HomeStack.Screen
+        name="HomeMain"
+        component={HomeScreen}
+        options={{
+          title: `Hi, ${firstName}!`,
+          headerShown: true,
+        }}
+      />
+      <HomeStack.Screen
+        name="Details"
+        component={DetailsScreen}
+        options={{
+          title: 'Place Details',
+          headerShown: true,
+        }}
+      />
     </HomeStack.Navigator>
   );
 }
@@ -45,6 +73,15 @@ export default function MainTabs() {
         name="Favorites"
         component={FavoritesScreen}
         options={{
+          headerShown: true,
+          headerStyle: {
+            backgroundColor: colors.primary,
+          },
+          headerTintColor: colors.textLight,
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+          title: 'My Favorites',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="heart" size={size} color={color} />
           ),
@@ -54,6 +91,15 @@ export default function MainTabs() {
         name="Profile"
         component={ProfileScreen}
         options={{
+          headerShown: true,
+          headerStyle: {
+            backgroundColor: colors.primary,
+          },
+          headerTintColor: colors.textLight,
+          headerTitleStyle: {
+            fontWeight: 'bold',
+          },
+          title: 'My Profile',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person" size={size} color={color} />
           ),
