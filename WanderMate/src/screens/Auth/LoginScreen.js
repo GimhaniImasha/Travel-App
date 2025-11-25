@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,54 +7,57 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { Ionicons } from '@expo/vector-icons';
+import { useForm, Controller } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
+import { Feather } from '@expo/vector-icons';
 import { loginUser } from '../../redux/slices/authSlice';
 import { colors, spacing, fontSize } from '../../theme/theme';
 
+// Validation schema
+const loginSchema = yup.object().shape({
+  email: yup
+    .string()
+    .required('Email is required')
+    .email('Please enter a valid email address'),
+  password: yup
+    .string()
+    .required('Password is required')
+    .min(8, 'Password must be at least 8 characters'),
+});
+
 export default function LoginScreen({ navigation }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState({});
   const dispatch = useDispatch();
   const { loading } = useSelector((state) => state.auth);
+  const scrollViewRef = useRef(null);
+  const emailInputRef = useRef(null);
+  const passwordInputRef = useRef(null);
 
-  const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
 
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (!email || !email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!validateEmail(email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
-
-    if (!password || !password.trim()) {
-      newErrors.password = 'Password is required';
-    } else if (password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleLogin = async () => {
-    if (!validateForm()) {
-      return;
-    }
-
+  const onSubmit = async (data) => {
     try {
       // For DummyJSON API, we use email prefix as username
-      const username = email.split('@')[0];
-      const resultAction = await dispatch(loginUser({ username, password }));
-      
+      const username = data.email.split('@')[0];
+      const resultAction = await dispatch(loginUser({ username, password: data.password }));
+
       if (loginUser.fulfilled.match(resultAction)) {
         // Login successful - navigation will happen automatically via AppNavigator
       } else {
@@ -68,74 +71,142 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>WanderMate</Text>
-      <Text style={styles.subtitle}>Travel with Ease</Text>
-
-      <View style={styles.form}>
-        <TextInput
-          style={[styles.input, errors.email && styles.inputError]}
-          placeholder="Email"
-          value={email}
-          onChangeText={(text) => {
-            setEmail(text);
-            if (errors.email) setErrors({ ...errors, email: null });
-          }}
-          autoCapitalize="none"
-          keyboardType="email-address"
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
+      <ScrollView
+        ref={scrollViewRef}
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+      >
+        {/* Header Image */}
+        <Image
+          source={{ uri: 'https://via.placeholder.com/600x200.png?text=WanderMate' }}
+          style={styles.headerImage}
+          resizeMode="cover"
         />
-        {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
 
-        <View style={styles.passwordContainer}>
-          <TextInput
-            style={[styles.passwordInput, errors.password && styles.inputError]}
-            placeholder="Password"
-            value={password}
-            onChangeText={(text) => {
-              setPassword(text);
-              if (errors.password) setErrors({ ...errors, password: null });
-            }}
-            secureTextEntry={!showPassword}
-            autoCapitalize="none"
-          />
-          <TouchableOpacity
-            style={styles.eyeIcon}
-            onPress={() => setShowPassword(!showPassword)}
-          >
-            <Ionicons
-              name={showPassword ? 'eye-off' : 'eye'}
-              size={24}
-              color={colors.textSecondary}
+        <View style={styles.formContainer}>
+          <Text style={styles.title}>Welcome Back!</Text>
+          <Text style={styles.subtitle}>Login to continue your journey</Text>
+
+          {/* Email Input */}
+          <View style={styles.inputContainer}>
+            <Controller
+              control={control}
+              name="email"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <View>
+                  <View style={styles.inputWrapper}>
+                    <Feather name="mail" size={20} color={colors.textSecondary} style={styles.inputIcon} />
+                    <TextInput
+                      style={[styles.input, errors.email && styles.inputError]}
+                      placeholder="Email"
+                      placeholderTextColor={colors.textSecondary}
+                      value={value}
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      onFocus={() => {
+                        setTimeout(() => {
+                          scrollViewRef.current?.scrollTo({ y: 200, animated: true });
+                        }, 100);
+                      }}
+                      autoCapitalize="none"
+                      keyboardType="email-address"
+                      autoComplete="email"
+                    />
+                  </View>
+                  {errors.email && (
+                    <View style={styles.errorContainer}>
+                      <Feather name="alert-circle" size={14} color={colors.error} />
+                      <Text style={styles.errorText}>{errors.email.message}</Text>
+                    </View>
+                  )}
+                </View>
+              )}
             />
+          </View>
+
+          {/* Password Input */}
+          <View style={styles.inputContainer}>
+            <Controller
+              control={control}
+              name="password"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <View>
+                  <View style={styles.inputWrapper}>
+                    <Feather name="lock" size={20} color={colors.textSecondary} style={styles.inputIcon} />
+                    <TextInput
+                      style={[styles.input, errors.password && styles.inputError]}
+                      placeholder="Password"
+                      placeholderTextColor={colors.textSecondary}
+                      value={value}
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      onFocus={() => {
+                        setTimeout(() => {
+                          scrollViewRef.current?.scrollTo({ y: 300, animated: true });
+                        }, 100);
+                      }}
+                      secureTextEntry={!showPassword}
+                      autoCapitalize="none"
+                      autoComplete="password"
+                    />
+                    <TouchableOpacity
+                      style={styles.eyeIcon}
+                      onPress={() => setShowPassword(!showPassword)}
+                    >
+                      <Feather
+                        name={showPassword ? 'eye-off' : 'eye'}
+                        size={20}
+                        color={colors.textSecondary}
+                      />
+                    </TouchableOpacity>
+                  </View>
+                  {errors.password && (
+                    <View style={styles.errorContainer}>
+                      <Feather name="alert-circle" size={14} color={colors.error} />
+                      <Text style={styles.errorText}>{errors.password.message}</Text>
+                    </View>
+                  )}
+                </View>
+              )}
+            />
+          </View>
+
+          {/* Login Button */}
+          <TouchableOpacity
+            style={[styles.button, loading && styles.buttonDisabled]}
+            onPress={handleSubmit(onSubmit)}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Login</Text>
+            )}
           </TouchableOpacity>
-        </View>
-        {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
 
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleLogin}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Login</Text>
-          )}
-        </TouchableOpacity>
+          {/* Register Link */}
+          <TouchableOpacity
+            style={styles.linkButton}
+            onPress={() => navigation.navigate('Register')}
+          >
+            <Text style={styles.linkText}>
+              Don't have an account? <Text style={styles.linkTextBold}>Register</Text>
+            </Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.linkButton}
-          onPress={() => navigation.navigate('Register')}
-        >
-          <Text style={styles.linkText}>
-            <Text style={styles.linkTextGray}>Don't have an account? </Text>
-            <Text style={styles.linkTextBlue}>Register</Text>
+          <Text style={styles.hintText}>
+            Hint: Register a new account or try emilys@x.dummyjson.com / emilyspass
           </Text>
-        </TouchableOpacity>
-
-        <Text style={styles.hintText}>Hint: Register a new account or try emilys / emilyspass</Text>
-      </View>
-    </View>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -143,61 +214,66 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    justifyContent: 'center',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: spacing.xxxl,
+  },
+  headerImage: {
+    width: '100%',
+    height: 200,
+  },
+  formContainer: {
     padding: spacing.lg,
   },
   title: {
     fontSize: fontSize.xxxl,
     fontWeight: 'bold',
     color: colors.primary,
-    textAlign: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   subtitle: {
-    fontSize: fontSize.lg,
+    fontSize: fontSize.md,
     color: colors.textSecondary,
-    textAlign: 'center',
     marginBottom: spacing.xl,
   },
-  form: {
-    width: '100%',
+  inputContainer: {
+    marginBottom: spacing.lg,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    paddingHorizontal: spacing.md,
+  },
+  inputIcon: {
+    marginRight: spacing.sm,
   },
   input: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
+    flex: 1,
     padding: spacing.md,
-    marginBottom: spacing.xs,
     fontSize: fontSize.md,
-  },
-  passwordContainer: {
-    position: 'relative',
-    marginBottom: spacing.xs,
-  },
-  passwordInput: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    padding: spacing.md,
-    paddingRight: 50,
-    fontSize: fontSize.md,
-  },
-  eyeIcon: {
-    position: 'absolute',
-    right: 12,
-    top: 12,
-    padding: 4,
+    color: colors.text,
   },
   inputError: {
     borderColor: colors.error,
   },
+  eyeIcon: {
+    padding: spacing.sm,
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.xs,
+  },
   errorText: {
     color: colors.error,
     fontSize: fontSize.sm,
-    marginBottom: spacing.md,
-    marginTop: -spacing.xs,
+    marginLeft: spacing.xs,
   },
   button: {
     backgroundColor: colors.primary,
@@ -205,6 +281,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     marginTop: spacing.md,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
   buttonText: {
     color: colors.textLight,
@@ -217,11 +296,9 @@ const styles = StyleSheet.create({
   },
   linkText: {
     fontSize: fontSize.md,
-  },
-  linkTextGray: {
     color: colors.textSecondary,
   },
-  linkTextBlue: {
+  linkTextBold: {
     color: colors.primary,
     fontWeight: '600',
   },
