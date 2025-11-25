@@ -8,14 +8,14 @@ import {
 } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
 import { logout } from '../../redux/slices/authSlice';
-import { clearFavourites } from '../../redux/slices/favouritesSlice';
-import { clearPlaces } from '../../redux/slices/placesSlice';
+import { clearFavorites } from '../../redux/slices/favouritesSlice';
+import { resetPlaces } from '../../redux/slices/placesSlice';
 import { colors, spacing, fontSize } from '../../theme/theme';
 
 export default function ProfileScreen() {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  const { favourites } = useSelector((state) => state.favourites);
+  const { items: favourites } = useSelector((state) => state.favourites);
 
   const handleLogout = () => {
     Alert.alert(
@@ -28,8 +28,8 @@ export default function ProfileScreen() {
           style: 'destructive',
           onPress: () => {
             dispatch(logout());
-            dispatch(clearFavourites());
-            dispatch(clearPlaces());
+            dispatch(clearFavorites());
+            dispatch(resetPlaces());
           },
         },
       ]

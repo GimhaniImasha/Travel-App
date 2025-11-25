@@ -10,11 +10,8 @@ import {
   Alert,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { placesSearch } from '../../api/tapi';
 import {
-  fetchPlacesStart,
-  fetchPlacesSuccess,
-  fetchPlacesFailure,
+  searchPlaces,
   setSelectedPlace,
 } from '../../redux/slices/placesSlice';
 import { colors, spacing, fontSize } from '../../theme/theme';
@@ -22,8 +19,10 @@ import { colors, spacing, fontSize } from '../../theme/theme';
 export default function HomeScreen({ navigation }) {
   const [searchQuery, setSearchQuery] = useState('');
   const dispatch = useDispatch();
-  const { places, loading } = useSelector((state) => state.places);
+  const { searchResults, status } = useSelector((state) => state.places);
   const { user } = useSelector((state) => state.auth);
+  
+  const loading = status === 'loading';
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
@@ -31,15 +30,14 @@ export default function HomeScreen({ navigation }) {
       return;
     }
 
-    dispatch(fetchPlacesStart());
-    const result = await placesSearch(searchQuery);
-
-    if (result.success) {
-      const placesData = result.data?.member || [];
-      dispatch(fetchPlacesSuccess(placesData));
-    } else {
-      dispatch(fetchPlacesFailure(result.error));
-      Alert.alert('Search Failed', result.error);
+    try {
+      const resultAction = await dispatch(searchPlaces(searchQuery));
+      
+      if (searchPlaces.rejected.match(resultAction)) {
+        Alert.alert('Search Failed', resultAction.payload || 'Failed to search places');
+      }
+    } catch (error) {
+      Alert.alert('Search Failed', error.message || 'An error occurred');
     }
   };
 
@@ -91,9 +89,9 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
-      ) : places.length > 0 ? (
+      ) : searchResults?.length > 0 ? (
         <FlatList
-          data={places}
+          data={searchResults}
           renderItem={renderPlace}
           keyExtractor={(item, index) => item.id?.toString() || index.toString()}
           contentContainerStyle={styles.listContainer}

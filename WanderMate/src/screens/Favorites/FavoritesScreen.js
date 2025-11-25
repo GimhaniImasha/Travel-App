@@ -8,13 +8,13 @@ import {
   Alert,
 } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
-import { removeFavourite } from '../../redux/slices/favouritesSlice';
+import { removeFavorite } from '../../redux/slices/favouritesSlice';
 import { setSelectedPlace } from '../../redux/slices/placesSlice';
 import { colors, spacing, fontSize } from '../../theme/theme';
 
 export default function FavoritesScreen({ navigation }) {
   const dispatch = useDispatch();
-  const { favourites } = useSelector((state) => state.favourites);
+  const { items: favourites } = useSelector((state) => state.favourites);
 
   const handleRemove = (id) => {
     Alert.alert(
@@ -25,7 +25,7 @@ export default function FavoritesScreen({ navigation }) {
         {
           text: 'Remove',
           style: 'destructive',
-          onPress: () => dispatch(removeFavourite(id)),
+          onPress: () => dispatch(removeFavorite(id)),
         },
       ]
     );

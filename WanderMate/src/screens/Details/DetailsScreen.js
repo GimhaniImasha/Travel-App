@@ -8,13 +8,13 @@ import {
   Alert,
 } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
-import { addFavourite, removeFavourite } from '../../redux/slices/favouritesSlice';
+import { addFavorite, removeFavorite } from '../../redux/slices/favouritesSlice';
 import { colors, spacing, fontSize } from '../../theme/theme';
 
 export default function DetailsScreen({ navigation }) {
   const dispatch = useDispatch();
   const { selectedPlace } = useSelector((state) => state.places);
-  const { favourites } = useSelector((state) => state.favourites);
+  const { items: favourites } = useSelector((state) => state.favourites);
 
   if (!selectedPlace) {
     return (
@@ -28,10 +28,10 @@ export default function DetailsScreen({ navigation }) {
 
   const toggleFavourite = () => {
     if (isFavourite) {
-      dispatch(removeFavourite(selectedPlace.id));
+      dispatch(removeFavorite(selectedPlace.id));
       Alert.alert('Removed', 'Place removed from favourites');
     } else {
-      dispatch(addFavourite(selectedPlace));
+      dispatch(addFavorite(selectedPlace));
       Alert.alert('Added', 'Place added to favourites');
     }
   };

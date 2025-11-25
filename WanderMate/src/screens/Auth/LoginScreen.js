@@ -10,8 +10,7 @@ import {
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { Ionicons } from '@expo/vector-icons';
-import { login as apiLogin } from '../../api/authApi';
-import { loginStart, loginSuccess, loginFailure } from '../../redux/slices/authSlice';
+import { loginUser } from '../../redux/slices/authSlice';
 import { colors, spacing, fontSize } from '../../theme/theme';
 
 export default function LoginScreen({ navigation }) {
@@ -51,16 +50,20 @@ export default function LoginScreen({ navigation }) {
       return;
     }
 
-    dispatch(loginStart());
-    // For DummyJSON API, we still use username but we'll use email prefix
-    const username = email.split('@')[0];
-    const result = await apiLogin({ username, password });
-
-    if (result.success) {
-      dispatch(loginSuccess({ user: result.data, token: result.data.token }));
-    } else {
-      dispatch(loginFailure(result.error));
-      Alert.alert('Login Failed', result.error);
+    try {
+      // For DummyJSON API, we use email prefix as username
+      const username = email.split('@')[0];
+      const resultAction = await dispatch(loginUser({ username, password }));
+      
+      if (loginUser.fulfilled.match(resultAction)) {
+        // Login successful - navigation will happen automatically via AppNavigator
+      } else {
+        // Login failed
+        const errorMessage = resultAction.payload || 'Login failed';
+        Alert.alert('Login Failed', errorMessage);
+      }
+    } catch (error) {
+      Alert.alert('Login Failed', error.message || 'An error occurred');
     }
   };
 
