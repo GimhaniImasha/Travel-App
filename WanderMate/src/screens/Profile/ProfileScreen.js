@@ -5,17 +5,32 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
+  Switch,
+  ScrollView,
 } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
+import { Feather } from '@expo/vector-icons';
 import { logout } from '../../redux/slices/authSlice';
 import { clearFavorites } from '../../redux/slices/favouritesSlice';
 import { resetPlaces } from '../../redux/slices/placesSlice';
-import { colors, spacing, fontSize } from '../../theme/theme';
+import { toggleTheme } from '../../redux/slices/uiSlice';
+import { useTheme } from '../../theme/ThemeProvider';
+import { spacing, fontSize } from '../../theme/theme';
 
 export default function ProfileScreen() {
   const dispatch = useDispatch();
+  const theme = useTheme();
+  const { colors } = theme;
   const { user } = useSelector((state) => state.auth);
   const { items: favourites } = useSelector((state) => state.favourites);
+  const isDarkMode = useSelector((state) => state.ui.isDarkMode);
+
+  // Format joined date
+  const joinedDate = new Date().toLocaleDateString('en-US', { 
+    year: 'numeric', 
+    month: 'long', 
+    day: 'numeric' 
+  });
 
   const handleLogout = () => {
     Alert.alert(
@@ -36,151 +51,219 @@ export default function ProfileScreen() {
     );
   };
 
+  const handleToggleTheme = () => {
+    dispatch(toggleTheme());
+  };
+
+  const handleEditProfile = () => {
+    Alert.alert('Edit Profile', 'Profile editing functionality coming soon!');
+  };
+
+  const handleChangePassword = () => {
+    Alert.alert('Change Password', 'Password change functionality coming soon!');
+  };
+
+  const styles = createStyles(colors);
+
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
+      {/* Profile Header */}
       <View style={styles.header}>
         <View style={styles.avatar}>
-          <Text style={styles.avatarText}>
-            {user?.firstName?.[0]?.toUpperCase() || 'U'}
-          </Text>
+          <Feather name="user" size={40} color={colors.primary} />
         </View>
         <Text style={styles.name}>
           {user?.firstName} {user?.lastName}
         </Text>
-        <Text style={styles.username}>@{user?.username}</Text>
+        <Text style={styles.email}>{user?.email}</Text>
       </View>
 
       <View style={styles.content}>
-        <View style={styles.statsContainer}>
-          <View style={styles.statBox}>
-            <Text style={styles.statValue}>{favourites.length}</Text>
-            <Text style={styles.statLabel}>Favourites</Text>
-          </View>
-        </View>
-
-        <View style={styles.infoSection}>
-          <Text style={styles.sectionTitle}>Account Information</Text>
-          
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Email:</Text>
-            <Text style={styles.infoValue}>{user?.email || 'N/A'}</Text>
-          </View>
-
-          {user?.phone && (
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Phone:</Text>
-              <Text style={styles.infoValue}>{user.phone}</Text>
+        {/* Settings Section */}
+        <Text style={styles.sectionHeader}>Settings</Text>
+        <View style={styles.section}>
+          <View style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconContainer, { backgroundColor: isDarkMode ? colors.primaryLight + '20' : '#FFF3E0' }]}>
+                <Feather 
+                  name="moon"
+                  size={20} 
+                  color={isDarkMode ? colors.primary : '#FF9800'} 
+                />
+              </View>
+              <View>
+                <Text style={styles.settingLabel}>Dark Mode</Text>
+                <Text style={styles.settingSubtext}>Adjust app appearance</Text>
+              </View>
             </View>
-          )}
+            <Switch
+              value={isDarkMode}
+              onValueChange={handleToggleTheme}
+              trackColor={{ false: colors.border, true: colors.primaryLight }}
+              thumbColor={isDarkMode ? colors.primary : '#f4f3f4'}
+            />
+          </View>
         </View>
 
+        {/* Account Section */}
+        <Text style={styles.sectionHeader}>Account</Text>
+        <View style={styles.section}>
+          <TouchableOpacity style={styles.settingRow} onPress={handleEditProfile}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconContainer, { backgroundColor: colors.primary + '20' }]}>
+                <Feather name="user" size={20} color={colors.primary} />
+              </View>
+              <View style={styles.settingTextContainer}>
+                <Text style={styles.settingLabel}>Account Details</Text>
+                <Text style={styles.settingSubtext}>View and edit profile</Text>
+              </View>
+            </View>
+            <Feather name="chevron-right" size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+
+          <View style={styles.divider} />
+
+          <TouchableOpacity style={styles.settingRow} onPress={handleChangePassword}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconContainer, { backgroundColor: '#4CAF5020' }]}>
+                <Feather name="lock" size={20} color={colors.success} />
+              </View>
+              <View style={styles.settingTextContainer}>
+                <Text style={styles.settingLabel}>Privacy & Security</Text>
+                <Text style={styles.settingSubtext}>Manage your privacy</Text>
+              </View>
+            </View>
+            <Feather name="chevron-right" size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+
+          <View style={styles.divider} />
+
+          <View style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <View style={[styles.iconContainer, { backgroundColor: colors.info + '20' }]}>
+                <Feather name="calendar" size={20} color={colors.info} />
+              </View>
+              <View style={styles.settingTextContainer}>
+                <Text style={styles.settingLabel}>Joined</Text>
+                <Text style={styles.settingSubtext}>{joinedDate}</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Logout Button */}
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Feather name="log-out" size={20} color={colors.textLight} />
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
   },
   header: {
     backgroundColor: colors.surface,
-    padding: spacing.xl,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.xl,
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
   },
   avatar: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: colors.secondary,
+    backgroundColor: colors.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing.md,
-  },
-  avatarText: {
-    fontSize: fontSize.xxxl,
-    fontWeight: 'bold',
-    color: colors.textLight,
   },
   name: {
-    fontSize: fontSize.xxl,
-    fontWeight: 'bold',
-    color: colors.textLight,
+    fontSize: fontSize.xl,
+    fontWeight: '600',
+    color: colors.text,
     marginBottom: spacing.xs,
   },
-  username: {
+  email: {
     fontSize: fontSize.md,
-    color: colors.textLight,
+    color: colors.textSecondary,
   },
   content: {
-    flex: 1,
     padding: spacing.lg,
   },
-  statsContainer: {
+  sectionHeader: {
+    fontSize: fontSize.sm,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    marginTop: spacing.lg,
+    marginBottom: spacing.sm,
+    marginLeft: spacing.xs,
+  },
+  section: {
+    backgroundColor: colors.surface,
+    borderRadius: 12,
+    padding: spacing.sm,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  settingRow: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: spacing.xl,
-  },
-  statBox: {
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    padding: spacing.lg,
+    justifyContent: 'space-between',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+  },
+  settingLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  iconContainer: {
+    width: 40,
+    height: 40,
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-    minWidth: 120,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.md,
   },
-  statValue: {
-    fontSize: fontSize.xxxl,
-    fontWeight: 'bold',
-    color: colors.primary,
+  settingTextContainer: {
+    flex: 1,
   },
-  statLabel: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    marginTop: spacing.xs,
-  },
-  infoSection: {
-    backgroundColor: colors.surface,
-    padding: spacing.lg,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-    marginBottom: spacing.xl,
-  },
-  sectionTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: spacing.md,
-  },
-  infoRow: {
-    marginBottom: spacing.md,
-  },
-  infoLabel: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    marginBottom: spacing.xs,
-  },
-  infoValue: {
+  settingLabel: {
     fontSize: fontSize.md,
+    fontWeight: '500',
     color: colors.text,
+  },
+  settingSubtext: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginLeft: spacing.xl + spacing.md,
   },
   logoutButton: {
-    backgroundColor: colors.error,
-    padding: spacing.md,
-    borderRadius: 8,
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.error,
+    paddingVertical: spacing.md,
+    borderRadius: 12,
+    marginTop: spacing.xl,
+    gap: spacing.sm,
   },
   logoutText: {
+    fontSize: fontSize.md,
+    fontWeight: '600',
     color: colors.textLight,
-    fontSize: fontSize.lg,
-    fontWeight: 'bold',
   },
 });

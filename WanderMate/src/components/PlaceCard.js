@@ -6,14 +6,19 @@ import {
   TouchableOpacity,
   StyleSheet,
 } from 'react-native';
-import { colors, spacing, fontSize } from '../theme/theme';
+import { useTheme } from '../theme/ThemeProvider';
+import { spacing, fontSize } from '../theme/theme';
 
 export default function PlaceCard({ image, title, subtitle, status, onPress }) {
+  const theme = useTheme();
+  const { colors } = theme;
   const imageUrl = image && image.includes('http') 
     ? image 
     : 'https://via.placeholder.com/400x300?text=No+Image';
 
   console.log('PlaceCard rendering:', title, 'Image URL:', imageUrl);
+
+  const styles = createStyles(colors);
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
@@ -39,7 +44,7 @@ export default function PlaceCard({ image, title, subtitle, status, onPress }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
     borderRadius: 12,

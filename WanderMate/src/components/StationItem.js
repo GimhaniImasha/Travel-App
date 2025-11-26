@@ -1,11 +1,16 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { colors, spacing, fontSize } from '../theme/theme';
+import { useTheme } from '../theme/ThemeProvider';
+import { spacing, fontSize } from '../theme/theme';
 
 export default function StationItem({ route, destination, time, type }) {
+  const theme = useTheme();
+  const { colors } = theme;
   const icon = type === 'bus' ? 'truck' : 'train';
   const iconColor = type === 'bus' ? colors.info : colors.success;
+
+  const styles = createStyles(colors);
 
   return (
     <View style={styles.container}>
@@ -25,7 +30,7 @@ export default function StationItem({ route, destination, time, type }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',

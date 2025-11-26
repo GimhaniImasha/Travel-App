@@ -11,9 +11,12 @@ import {
 import { Feather } from '@expo/vector-icons';
 import { fetchPlaces } from '../../api/mockapi';
 import PlaceCard from '../../components/PlaceCard';
-import { colors, spacing, fontSize } from '../../theme/theme';
+import { useTheme } from '../../theme/ThemeProvider';
+import { spacing, fontSize } from '../../theme/theme';
 
 export default function HomeScreen({ navigation }) {
+  const theme = useTheme();
+  const { colors } = theme;
   const [searchQuery, setSearchQuery] = useState('');
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -147,6 +150,8 @@ export default function HomeScreen({ navigation }) {
     );
   };
 
+  const styles = createStyles(colors);
+
   return (
     <View style={styles.container}>
       <View style={styles.searchContainer}>
@@ -155,6 +160,7 @@ export default function HomeScreen({ navigation }) {
           <TextInput
             style={styles.searchInput}
             placeholder="Search places..."
+            placeholderTextColor={colors.textSecondary}
             placeholderTextColor={colors.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -207,7 +213,7 @@ export default function HomeScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,

@@ -11,9 +11,12 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Feather } from '@expo/vector-icons';
 import { addFavorite, removeFavorite } from '../../redux/slices/favouritesSlice';
 import StationItem from '../../components/StationItem';
-import { colors, spacing, fontSize } from '../../theme/theme';
+import { useTheme } from '../../theme/ThemeProvider';
+import { spacing, fontSize } from '../../theme/theme';
 
 export default function DetailsScreen({ route, navigation }) {
+  const theme = useTheme();
+  const { colors } = theme;
   const dispatch = useDispatch();
   const place = route.params?.place;
   const { items: favourites } = useSelector((state) => state.favourites);
@@ -42,14 +45,10 @@ export default function DetailsScreen({ route, navigation }) {
         dispatch(removeFavorite(favoriteToRemove.id));
       }
     } else {
+      // Save the complete place object with all data
       const favoritePlace = {
+        ...place,
         id: place.id || `${place.name}-${place.latitude}-${place.longitude}`,
-        name: place.name,
-        type: place.type,
-        description: place.description,
-        image: place.image,
-        latitude: place.latitude,
-        longitude: place.longitude,
       };
       dispatch(addFavorite(favoritePlace));
     }
@@ -103,6 +102,8 @@ export default function DetailsScreen({ route, navigation }) {
     }
     return stars;
   };
+
+  const styles = createStyles(colors);
 
   const getImageSource = () => {
     if (place.image && place.image.includes('http')) {
@@ -290,7 +291,7 @@ export default function DetailsScreen({ route, navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,

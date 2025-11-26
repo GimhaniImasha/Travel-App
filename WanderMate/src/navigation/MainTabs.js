@@ -8,14 +8,20 @@ import HomeScreen from '../screens/Home/HomeScreen';
 import DetailsScreen from '../screens/Details/DetailsScreen';
 import FavoritesScreen from '../screens/Favorites/FavoritesScreen';
 import ProfileScreen from '../screens/Profile/ProfileScreen';
-import { colors, spacing, fontSize } from '../theme/theme';
+import { useTheme } from '../theme/ThemeProvider';
+import { spacing, fontSize } from '../theme/theme';
 
 const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
+const FavoritesStack = createNativeStackNavigator();
 
 function CustomHomeHeader({ navigation }) {
+  const theme = useTheme();
+  const { colors } = theme;
   const { user } = useSelector((state) => state.auth);
   const firstName = user?.firstName || 'Traveler';
+
+  const styles = createHeaderStyles(colors);
 
   return (
     <View style={styles.customHeader}>
@@ -37,6 +43,9 @@ function CustomHomeHeader({ navigation }) {
 }
 
 function HomeStackNavigator() {
+  const theme = useTheme();
+  const { colors } = theme;
+
   return (
     <HomeStack.Navigator
       screenOptions={{
@@ -72,7 +81,46 @@ function HomeStackNavigator() {
   );
 }
 
+function FavoritesStackNavigator() {
+  const theme = useTheme();
+  const { colors } = theme;
+
+  return (
+    <FavoritesStack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: colors.primary,
+        },
+        headerTintColor: colors.textLight,
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+      }}
+    >
+      <FavoritesStack.Screen
+        name="FavoritesMain"
+        component={FavoritesScreen}
+        options={{
+          title: 'My Favorites',
+          headerShown: true,
+        }}
+      />
+      <FavoritesStack.Screen
+        name="Details"
+        component={DetailsScreen}
+        options={{
+          title: 'Place Details',
+          headerShown: true,
+        }}
+      />
+    </FavoritesStack.Navigator>
+  );
+}
+
 export default function MainTabs() {
+  const theme = useTheme();
+  const { colors } = theme;
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -95,17 +143,8 @@ export default function MainTabs() {
       />
       <Tab.Screen
         name="Favorites"
-        component={FavoritesScreen}
+        component={FavoritesStackNavigator}
         options={{
-          headerShown: true,
-          headerStyle: {
-            backgroundColor: colors.primary,
-          },
-          headerTintColor: colors.textLight,
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
-          title: 'My Favorites',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="heart" size={size} color={color} />
           ),
@@ -133,7 +172,7 @@ export default function MainTabs() {
   );
 }
 
-const styles = StyleSheet.create({
+const createHeaderStyles = (colors) => StyleSheet.create({
   customHeader: {
     flexDirection: 'row',
     alignItems: 'center',
