@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { placesSearch } from '../../api/tapi';
+import { fetchPlaces } from '../../api/mockapi';
 import PlaceCard from '../../components/PlaceCard';
 import { colors, spacing, fontSize } from '../../theme/theme';
 
@@ -17,8 +17,7 @@ export default function HomeScreen({ navigation }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [places, setPlaces] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [isSearchActive, setIsSearchActive] = useState(false);
+  const [isSearchMode, setIsSearchMode] = useState(false);
 
   useEffect(() => {
     loadRecommendedPlaces();
@@ -26,48 +25,42 @@ export default function HomeScreen({ navigation }) {
 
   const loadRecommendedPlaces = async () => {
     setLoading(true);
-    setError(null);
+    setIsSearchMode(false);
     
     try {
       const queries = ['museum', 'park', 'landmark'];
       const results = await Promise.all(
-        queries.map(query => placesSearch(query))
+        queries.map(query => fetchPlaces(query))
       );
       
+      // Merge and remove duplicates by id
       const allPlaces = results.flat();
-      const uniquePlaces = removeDuplicatesByName(allPlaces);
+      const uniquePlaces = Array.from(
+        new Map(allPlaces.map(place => [place.id, place])).values()
+      );
       
       setPlaces(uniquePlaces);
-      setIsSearchActive(false);
-    } catch (err) {
-      setError(err.message || 'Failed to load recommended places');
+    } catch (error) {
+      console.error('Error loading recommended places:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const removeDuplicatesByName = (placesArray) => {
-    const seen = new Set();
-    return placesArray.filter(place => {
-      const name = place.name?.toLowerCase();
-      if (!name || seen.has(name)) return false;
-      seen.add(name);
-      return true;
-    });
-  };
-
   const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
+    if (!searchQuery.trim()) {
+      loadRecommendedPlaces();
+      return;
+    }
 
     setLoading(true);
-    setError(null);
-    setIsSearchActive(true);
+    setIsSearchMode(true);
 
     try {
-      const results = await placesSearch(searchQuery);
+      const results = await fetchPlaces(searchQuery);
       setPlaces(results);
-    } catch (err) {
-      setError(err.message || 'Search failed');
+    } catch (error) {
+      console.error('Error searching places:', error);
       setPlaces([]);
     } finally {
       setLoading(false);
@@ -78,14 +71,52 @@ export default function HomeScreen({ navigation }) {
     navigation.navigate('Details', { place });
   };
 
+  const getDistanceToNearestBusStop = (place) => {
+    const busStops = parseJSON(place.nearbyBusStops);
+    if (busStops && busStops.length > 0) {
+      return busStops[0].distance;
+    }
+    return null;
+  };
+
+  const parseJSON = (jsonString) => {
+    if (!jsonString) return [];
+    if (typeof jsonString === 'object') return jsonString;
+    try {
+      return JSON.parse(jsonString);
+    } catch {
+      return [];
+    }
+  };
+
+  const formatDistance = (distance) => {
+    if (!distance) return null;
+    
+    // If distance is already a string (e.g., "300m", "1.5km"), return it
+    if (typeof distance === 'string') {
+      return distance;
+    }
+    
+    // If distance is a number, format it
+    if (distance < 1000) return `${Math.round(distance)}m`;
+    return `${(distance / 1000).toFixed(1)}km`;
+  };
+
+  const isPopularType = (type) => {
+    const popularTypes = ['park', 'temple', 'landmark'];
+    return popularTypes.includes(type?.toLowerCase());
+  };
+
   const renderPlace = ({ item }) => {
-    const status = item.type === 'poi' ? 'Popular' : 'Featured';
+    const status = isPopularType(item.type) ? 'Popular' : 'Featured';
+    const distance = getDistanceToNearestBusStop(item);
+    const distanceText = distance ? `🚌 ${formatDistance(distance)}` : null;
     
     return (
       <PlaceCard
-        image={`https://picsum.photos/600/400?random=${Math.random()}`}
+        image={item.image || `https://picsum.photos/600/400?random=${Math.random()}`}
         title={item.name}
-        subtitle={item.type || 'Unknown'}
+        subtitle={`${item.type || 'Place'}${distanceText ? ' • ' + distanceText : ''}`}
         status={status}
         onPress={() => handlePlacePress(item)}
       />
@@ -99,12 +130,15 @@ export default function HomeScreen({ navigation }) {
       <View style={styles.emptyContainer}>
         <Feather name="map-pin" size={64} color={colors.textSecondary} />
         <Text style={styles.emptyText}>
-          {isSearchActive ? 'No places found' : 'Search for places to explore'}
+          {isSearchMode ? 'No places found matching your search' : 'No places available'}
         </Text>
-        {isSearchActive && (
+        {isSearchMode && (
           <TouchableOpacity
             style={styles.resetButton}
-            onPress={loadRecommendedPlaces}
+            onPress={() => {
+              setSearchQuery('');
+              loadRecommendedPlaces();
+            }}
           >
             <Text style={styles.resetButtonText}>View Recommendations</Text>
           </TouchableOpacity>
@@ -113,19 +147,6 @@ export default function HomeScreen({ navigation }) {
     );
   };
 
-  const renderErrorState = () => (
-    <View style={styles.emptyContainer}>
-      <Feather name="alert-circle" size={64} color={colors.error} />
-      <Text style={styles.errorText}>{error}</Text>
-      <TouchableOpacity
-        style={styles.retryButton}
-        onPress={isSearchActive ? handleSearch : loadRecommendedPlaces}
-      >
-        <Text style={styles.retryButtonText}>Try Again</Text>
-      </TouchableOpacity>
-    </View>
-  );
-
   return (
     <View style={styles.container}>
       <View style={styles.searchContainer}>
@@ -133,7 +154,7 @@ export default function HomeScreen({ navigation }) {
           <Feather name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search museums, parks, landmarks..."
+            placeholder="Search places..."
             placeholderTextColor={colors.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -144,9 +165,7 @@ export default function HomeScreen({ navigation }) {
             <TouchableOpacity
               onPress={() => {
                 setSearchQuery('');
-                if (isSearchActive) {
-                  loadRecommendedPlaces();
-                }
+                loadRecommendedPlaces();
               }}
             >
               <Feather name="x-circle" size={20} color={colors.textSecondary} />
@@ -156,13 +175,13 @@ export default function HomeScreen({ navigation }) {
         <TouchableOpacity
           style={[styles.searchButton, loading && styles.searchButtonDisabled]}
           onPress={handleSearch}
-          disabled={loading || !searchQuery.trim()}
+          disabled={loading}
         >
           <Feather name="arrow-right" size={20} color={colors.textLight} />
         </TouchableOpacity>
       </View>
 
-      {!isSearchActive && places.length > 0 && (
+      {!isSearchMode && places.length > 0 && (
         <Text style={styles.sectionTitle}>Recommended Places</Text>
       )}
 
@@ -170,16 +189,14 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.loadingText}>
-            {isSearchActive ? 'Searching...' : 'Loading recommendations...'}
+            {isSearchMode ? 'Searching...' : 'Loading recommendations...'}
           </Text>
         </View>
-      ) : error ? (
-        renderErrorState()
       ) : places.length > 0 ? (
         <FlatList
           data={places}
           renderItem={renderPlace}
-          keyExtractor={(item, index) => `${item.name}-${index}`}
+          keyExtractor={(item, index) => item.id?.toString() || `place-${index}`}
           contentContainerStyle={styles.listContainer}
           showsVerticalScrollIndicator={false}
         />

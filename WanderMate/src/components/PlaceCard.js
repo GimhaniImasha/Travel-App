@@ -9,9 +9,21 @@ import {
 import { colors, spacing, fontSize } from '../theme/theme';
 
 export default function PlaceCard({ image, title, subtitle, status, onPress }) {
+  const imageUrl = image && image.includes('http') 
+    ? image 
+    : 'https://via.placeholder.com/400x300?text=No+Image';
+
+  console.log('PlaceCard rendering:', title, 'Image URL:', imageUrl);
+
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
-      <Image source={{ uri: image }} style={styles.image} />
+      <Image 
+        source={{ uri: imageUrl }} 
+        style={styles.image}
+        resizeMode="cover"
+        onError={(e) => console.log('PlaceCard image error:', imageUrl, e.nativeEvent.error)}
+        onLoad={() => console.log('PlaceCard image loaded successfully:', title)}
+      />
       <View style={styles.content}>
         <View style={styles.header}>
           <Text style={styles.title} numberOfLines={2}>{title}</Text>
