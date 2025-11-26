@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,8 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Image,
+  ImageBackground,
+  Animated,
 } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -74,6 +75,15 @@ export default function RegisterScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const dispatch = useDispatch();
   const scrollViewRef = useRef(null);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
   const {
     control,
@@ -129,28 +139,27 @@ export default function RegisterScreen({ navigation }) {
   };
 
   return (
-    <KeyboardAvoidingView
+    <ImageBackground
+      source={require('../../../assets/loginBackground.gif')}
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      resizeMode="cover"
     >
-      <ScrollView
-        ref={scrollViewRef}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-        bounces={false}
+      <View style={styles.overlay} />
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoid}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        {/* Header Image */}
-        <Image
-          source={{ uri: 'https://via.placeholder.com/600x200.png?text=WanderMate' }}
-          style={styles.headerImage}
-          resizeMode="cover"
-        />
-
-        <View style={styles.formContainer}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Join WanderMate Today</Text>
+        <ScrollView
+          ref={scrollViewRef}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+        >
+          <Animated.View style={[styles.formContainer, { opacity: fadeAnim }]}>
+            <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.subtitle}>Join WanderMate Today</Text>
 
           {/* First Name */}
           <View style={styles.inputContainer}>
@@ -160,11 +169,11 @@ export default function RegisterScreen({ navigation }) {
               render={({ field: { onChange, onBlur, value } }) => (
                 <View>
                   <View style={styles.inputWrapper}>
-                    <Feather name="user" size={20} color={colors.textSecondary} style={styles.inputIcon} />
+                    <Feather name="user" size={20} color="rgba(255, 255, 255, 0.7)" style={styles.inputIcon} />
                     <TextInput
                       style={[styles.input, errors.firstName && styles.inputError]}
                       placeholder="First Name"
-                      placeholderTextColor={colors.textSecondary}
+                      placeholderTextColor="rgba(255, 255, 255, 0.7)"
                       value={value}
                       onChangeText={onChange}
                       onBlur={onBlur}
@@ -195,11 +204,11 @@ export default function RegisterScreen({ navigation }) {
               render={({ field: { onChange, onBlur, value } }) => (
                 <View>
                   <View style={styles.inputWrapper}>
-                    <Feather name="user" size={20} color={colors.textSecondary} style={styles.inputIcon} />
+                    <Feather name="user" size={20} color="rgba(255, 255, 255, 0.7)" style={styles.inputIcon} />
                     <TextInput
                       style={[styles.input, errors.lastName && styles.inputError]}
                       placeholder="Last Name"
-                      placeholderTextColor={colors.textSecondary}
+                      placeholderTextColor="rgba(255, 255, 255, 0.7)"
                       value={value}
                       onChangeText={onChange}
                       onBlur={onBlur}
@@ -226,11 +235,11 @@ export default function RegisterScreen({ navigation }) {
               render={({ field: { onChange, onBlur, value } }) => (
                 <View>
                   <View style={styles.inputWrapper}>
-                    <Feather name="mail" size={20} color={colors.textSecondary} style={styles.inputIcon} />
+                    <Feather name="mail" size={20} color="rgba(255, 255, 255, 0.7)" style={styles.inputIcon} />
                     <TextInput
                       style={[styles.input, errors.email && styles.inputError]}
                       placeholder="Email"
-                      placeholderTextColor={colors.textSecondary}
+                      placeholderTextColor="rgba(255, 255, 255, 0.7)"
                       value={value}
                       onChangeText={onChange}
                       onBlur={onBlur}
@@ -259,11 +268,11 @@ export default function RegisterScreen({ navigation }) {
               render={({ field: { onChange, onBlur, value } }) => (
                 <View>
                   <View style={styles.inputWrapper}>
-                    <Feather name="lock" size={20} color={colors.textSecondary} style={styles.inputIcon} />
+                    <Feather name="lock" size={20} color="rgba(255, 255, 255, 0.7)" style={styles.inputIcon} />
                     <TextInput
                       style={[styles.input, errors.password && styles.inputError]}
                       placeholder="Password"
-                      placeholderTextColor={colors.textSecondary}
+                      placeholderTextColor="rgba(255, 255, 255, 0.7)"
                       value={value}
                       onChangeText={onChange}
                       onBlur={onBlur}
@@ -278,7 +287,7 @@ export default function RegisterScreen({ navigation }) {
                       <Feather
                         name={showPassword ? 'eye-off' : 'eye'}
                         size={20}
-                        color={colors.textSecondary}
+                        color="rgba(255, 255, 255, 0.7)"
                       />
                     </TouchableOpacity>
                   </View>
@@ -301,11 +310,11 @@ export default function RegisterScreen({ navigation }) {
               render={({ field: { onChange, onBlur, value } }) => (
                 <View>
                   <View style={styles.inputWrapper}>
-                    <Feather name="lock" size={20} color={colors.textSecondary} style={styles.inputIcon} />
+                    <Feather name="lock" size={20} color="rgba(255, 255, 255, 0.7)" style={styles.inputIcon} />
                     <TextInput
                       style={[styles.input, errors.confirmPassword && styles.inputError]}
                       placeholder="Confirm Password"
-                      placeholderTextColor={colors.textSecondary}
+                      placeholderTextColor="rgba(255, 255, 255, 0.7)"
                       value={value}
                       onChangeText={onChange}
                       onBlur={onBlur}
@@ -320,7 +329,7 @@ export default function RegisterScreen({ navigation }) {
                       <Feather
                         name={showConfirmPassword ? 'eye-off' : 'eye'}
                         size={20}
-                        color={colors.textSecondary}
+                        color="rgba(255, 255, 255, 0.7)"
                       />
                     </TouchableOpacity>
                   </View>
@@ -348,7 +357,6 @@ export default function RegisterScreen({ navigation }) {
             )}
           </TouchableOpacity>
 
-          {/* Login Link */}
           <TouchableOpacity
             style={styles.linkButton}
             onPress={() => navigation.navigate('Login')}
@@ -357,38 +365,60 @@ export default function RegisterScreen({ navigation }) {
               Already have an account? <Text style={styles.linkTextBold}>Login</Text>
             </Text>
           </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+  },
+  keyboardAvoid: {
+    flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: 100,
-  },
-  headerImage: {
-    width: '100%',
-    height: 150,
+    justifyContent: 'center',
+    paddingVertical: spacing.xxxl,
   },
   formContainer: {
-    padding: spacing.lg,
+    marginHorizontal: spacing.lg,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 16,
+    padding: spacing.xl,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   title: {
     fontSize: fontSize.xxxl,
     fontWeight: 'bold',
-    color: colors.primary,
+    color: '#FFFFFF',
     marginBottom: spacing.xs,
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   subtitle: {
     fontSize: fontSize.md,
-    color: colors.textSecondary,
-    marginBottom: spacing.lg,
+    color: '#FFFFFF',
+    marginBottom: spacing.xl,
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   inputContainer: {
     marginBottom: spacing.md,
@@ -396,9 +426,9 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
     borderRadius: 8,
     paddingHorizontal: spacing.md,
   },
@@ -409,7 +439,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: spacing.md,
     fontSize: fontSize.md,
-    color: colors.text,
+    color: '#FFFFFF',
   },
   inputError: {
     borderColor: colors.error,
@@ -450,10 +480,13 @@ const styles = StyleSheet.create({
   },
   linkText: {
     fontSize: fontSize.md,
-    color: colors.textSecondary,
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   linkTextBold: {
-    color: colors.primary,
-    fontWeight: '600',
+    color: '#2196F3',
+    fontWeight: '700',
   },
 });

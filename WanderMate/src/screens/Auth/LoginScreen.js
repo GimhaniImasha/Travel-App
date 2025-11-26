@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,10 +7,11 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
-  Image,
+  ImageBackground,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Animated,
 } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
 import { useForm, Controller } from 'react-hook-form';
@@ -39,6 +40,15 @@ export default function LoginScreen({ navigation }) {
   const scrollViewRef = useRef(null);
   const emailInputRef = useRef(null);
   const passwordInputRef = useRef(null);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
   const {
     control,
@@ -71,28 +81,27 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <KeyboardAvoidingView
+    <ImageBackground
+      source={require('../../../assets/loginBackground.gif')}
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      resizeMode="cover"
     >
-      <ScrollView
-        ref={scrollViewRef}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-        bounces={false}
+      <View style={styles.overlay} />
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoid}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
-        {/* Header Image */}
-        <Image
-          source={{ uri: 'https://via.placeholder.com/600x200.png?text=WanderMate' }}
-          style={styles.headerImage}
-          resizeMode="cover"
-        />
-
-        <View style={styles.formContainer}>
-          <Text style={styles.title}>Welcome Back!</Text>
-          <Text style={styles.subtitle}>Login to continue your journey</Text>
+        <ScrollView
+          ref={scrollViewRef}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          bounces={false}
+        >
+          <Animated.View style={[styles.formContainer, { opacity: fadeAnim }]}>
+            <Text style={styles.title}>Welcome Back!</Text>
+            <Text style={styles.subtitle}>Login to continue your journey</Text>
 
           {/* Email Input */}
           <View style={styles.inputContainer}>
@@ -102,11 +111,11 @@ export default function LoginScreen({ navigation }) {
               render={({ field: { onChange, onBlur, value } }) => (
                 <View>
                   <View style={styles.inputWrapper}>
-                    <Feather name="mail" size={20} color={colors.textSecondary} style={styles.inputIcon} />
+                    <Feather name="mail" size={20} color="rgba(255, 255, 255, 0.7)" style={styles.inputIcon} />
                     <TextInput
                       style={[styles.input, errors.email && styles.inputError]}
                       placeholder="Email"
-                      placeholderTextColor={colors.textSecondary}
+                      placeholderTextColor="rgba(255, 255, 255, 0.7)"
                       value={value}
                       onChangeText={onChange}
                       onBlur={onBlur}
@@ -139,11 +148,11 @@ export default function LoginScreen({ navigation }) {
               render={({ field: { onChange, onBlur, value } }) => (
                 <View>
                   <View style={styles.inputWrapper}>
-                    <Feather name="lock" size={20} color={colors.textSecondary} style={styles.inputIcon} />
+                    <Feather name="lock" size={20} color="rgba(255, 255, 255, 0.7)" style={styles.inputIcon} />
                     <TextInput
                       style={[styles.input, errors.password && styles.inputError]}
                       placeholder="Password"
-                      placeholderTextColor={colors.textSecondary}
+                      placeholderTextColor="rgba(255, 255, 255, 0.7)"
                       value={value}
                       onChangeText={onChange}
                       onBlur={onBlur}
@@ -163,7 +172,7 @@ export default function LoginScreen({ navigation }) {
                       <Feather
                         name={showPassword ? 'eye-off' : 'eye'}
                         size={20}
-                        color={colors.textSecondary}
+                        color="rgba(255, 255, 255, 0.7)"
                       />
                     </TouchableOpacity>
                   </View>
@@ -192,50 +201,68 @@ export default function LoginScreen({ navigation }) {
           </TouchableOpacity>
 
           {/* Register Link */}
-          <TouchableOpacity
-            style={styles.linkButton}
-            onPress={() => navigation.navigate('Register')}
-          >
-            <Text style={styles.linkText}>
-              Don't have an account? <Text style={styles.linkTextBold}>Register</Text>
-            </Text>
-          </TouchableOpacity>
-
-          <Text style={styles.hintText}>
-            Hint: Register a new account or try emilys@x.dummyjson.com / emilyspass
-          </Text>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            <TouchableOpacity
+              style={styles.linkButton}
+              onPress={() => navigation.navigate('Register')}
+            >
+              <Text style={styles.linkText}>
+                Don't have an account? <Text style={styles.linkTextBold}>Register</Text>
+              </Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+  },
+  keyboardAvoid: {
+    flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    paddingBottom: spacing.xxxl,
-  },
-  headerImage: {
-    width: '100%',
-    height: 200,
+    justifyContent: 'center',
+    paddingVertical: spacing.xxxl,
   },
   formContainer: {
-    padding: spacing.lg,
+    marginHorizontal: spacing.lg,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 16,
+    padding: spacing.xl,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   title: {
     fontSize: fontSize.xxxl,
     fontWeight: 'bold',
-    color: colors.primary,
+    color: '#FFFFFF',
     marginBottom: spacing.xs,
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   subtitle: {
     fontSize: fontSize.md,
-    color: colors.textSecondary,
+    color: '#FFFFFF',
     marginBottom: spacing.xl,
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   inputContainer: {
     marginBottom: spacing.lg,
@@ -243,9 +270,9 @@ const styles = StyleSheet.create({
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
     borderRadius: 8,
     paddingHorizontal: spacing.md,
   },
@@ -256,7 +283,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: spacing.md,
     fontSize: fontSize.md,
-    color: colors.text,
+    color: '#FFFFFF',
   },
   inputError: {
     borderColor: colors.error,
@@ -296,17 +323,13 @@ const styles = StyleSheet.create({
   },
   linkText: {
     fontSize: fontSize.md,
-    color: colors.textSecondary,
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   linkTextBold: {
-    color: colors.primary,
-    fontWeight: '600',
-  },
-  hintText: {
-    marginTop: spacing.xl,
-    textAlign: 'center',
-    color: colors.textSecondary,
-    fontSize: fontSize.sm,
-    fontStyle: 'italic',
+    color: '#2196F3',
+    fontWeight: '700',
   },
 });
