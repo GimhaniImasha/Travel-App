@@ -21,32 +21,19 @@ const getApiCredentials = () => {
 
 /**
  * Search for places by query string
- * @param {string} query - Search query (e.g., "London", "Victoria Station")
- * @returns {Promise<Object>} - API response with places data
+ * @param {string} query - Search query (e.g., "museum", "park", "landmark")
+ * @returns {Promise<Array>} - Array of place objects
  * @throws {Error} - If the request fails
  */
-export const placesSearch = async (query) => {
-  try {
-    const credentials = getApiCredentials();
-    const response = await tapiClient.get('/places.json', {
-      params: {
-        query,
-        ...credentials,
-      },
-    });
-    
-    return {
-      success: true,
-      data: response.data,
-    };
-  } catch (error) {
-    console.error('placesSearch error:', error.message);
-    return {
-      success: false,
-      error: error.response?.data?.error || error.message || 'Failed to search places',
-    };
-  }
-};
+export async function placesSearch(query) {
+  const url = `https://transportapi.com/v3/uk/places.json?query=${encodeURIComponent(query)}&app_id=f3f35872&app_key=62dfbc29c608b27e5fe31ddbdb475122`;
+
+  const response = await fetch(url);
+  if (!response.ok) throw new Error("Failed to fetch places");
+  
+  const data = await response.json();
+  return data.member || [];
+}
 
 /**
  * Calculate distance between two coordinates using Haversine formula

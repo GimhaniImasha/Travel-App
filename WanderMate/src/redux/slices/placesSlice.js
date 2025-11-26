@@ -1,50 +1,56 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
-  places: [],
+  searchResults: [],
   selectedPlace: null,
-  loading: false,
+  status: 'idle',
   error: null,
-  searchQuery: '',
 };
 
 const placesSlice = createSlice({
   name: 'places',
   initialState,
   reducers: {
-    fetchPlacesStart: (state) => {
-      state.loading = true;
-      state.error = null;
-    },
-    fetchPlacesSuccess: (state, action) => {
-      state.loading = false;
-      state.places = action.payload;
-      state.error = null;
-    },
-    fetchPlacesFailure: (state, action) => {
-      state.loading = false;
-      state.error = action.payload;
+    setSearchResults: (state, action) => {
+      state.searchResults = action.payload;
+      state.status = 'succeeded';
     },
     setSelectedPlace: (state, action) => {
       state.selectedPlace = action.payload;
     },
-    setSearchQuery: (state, action) => {
-      state.searchQuery = action.payload;
-    },
-    clearPlaces: (state) => {
-      state.places = [];
-      state.selectedPlace = null;
+    setLoading: (state) => {
+      state.status = 'loading';
       state.error = null;
+    },
+    setError: (state, action) => {
+      state.status = 'failed';
+      state.error = action.payload;
+    },
+    clearSearchResults: (state) => {
+      state.searchResults = [];
+      state.error = null;
+      state.status = 'idle';
+    },
+    resetPlaces: (state) => {
+      return initialState;
     },
   },
 });
 
+// Selectors
+export const selectPlaces = (state) => state.places;
+export const selectSearchResults = (state) => state.places.searchResults;
+export const selectSelectedPlace = (state) => state.places.selectedPlace;
+export const selectPlacesStatus = (state) => state.places.status;
+export const selectPlacesError = (state) => state.places.error;
+
 export const {
-  fetchPlacesStart,
-  fetchPlacesSuccess,
-  fetchPlacesFailure,
+  setSearchResults,
   setSelectedPlace,
-  setSearchQuery,
-  clearPlaces,
+  setLoading,
+  setError,
+  clearSearchResults,
+  resetPlaces,
 } = placesSlice.actions;
+
 export default placesSlice.reducer;

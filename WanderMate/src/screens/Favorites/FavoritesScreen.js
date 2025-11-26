@@ -3,65 +3,91 @@ import {
   View,
   Text,
   FlatList,
-  TouchableOpacity,
   StyleSheet,
   Alert,
 } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
-import { removeFavourite } from '../../redux/slices/favouritesSlice';
-import { setSelectedPlace } from '../../redux/slices/placesSlice';
-import { colors, spacing, fontSize } from '../../theme/theme';
+import { Feather } from '@expo/vector-icons';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
+import { removeFavorite } from '../../redux/slices/favouritesSlice';
+import PlaceCard from '../../components/PlaceCard';
+import { useTheme } from '../../theme/ThemeProvider';
+import { spacing, fontSize } from '../../theme/theme';
 
 export default function FavoritesScreen({ navigation }) {
+  const theme = useTheme();
+  const { colors } = theme;
   const dispatch = useDispatch();
-  const { favourites } = useSelector((state) => state.favourites);
+  const { items: favourites } = useSelector((state) => state.favourites);
 
-  const handleRemove = (id) => {
+  const handleRemove = (id, name) => {
     Alert.alert(
-      'Remove Favourite',
-      'Are you sure you want to remove this place from favourites?',
+      'Remove Favorite',
+      `Remove "${name}" from favorites?`,
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Remove',
           style: 'destructive',
-          onPress: () => dispatch(removeFavourite(id)),
+          onPress: () => dispatch(removeFavorite(id)),
         },
       ]
     );
   };
 
   const handlePlacePress = (place) => {
-    dispatch(setSelectedPlace(place));
-    navigation.navigate('Home', { screen: 'Details' });
+    navigation.navigate('Details', { place });
   };
 
-  const renderFavourite = ({ item }) => (
-    <View style={styles.card}>
-      <TouchableOpacity
-        style={styles.cardContent}
-        onPress={() => handlePlacePress(item)}
+  const isPopularType = (type) => {
+    const popularTypes = ['park', 'temple', 'landmark'];
+    return popularTypes.includes(type?.toLowerCase());
+  };
+
+  const renderRightActions = (item) => {
+    return (
+      <View style={styles.swipeAction}>
+        <Feather name="trash-2" size={24} color={colors.textLight} />
+        <Text style={styles.swipeActionText}>Delete</Text>
+      </View>
+    );
+  };
+
+  const renderFavourite = ({ item }) => {
+    const status = isPopularType(item.type) ? 'Popular' : 'Featured';
+
+    return (
+      <Swipeable
+        renderRightActions={() => renderRightActions(item)}
+        onSwipeableRightOpen={() => handleRemove(item.id, item.name)}
+        rightThreshold={40}
+        friction={2}
       >
-        <Text style={styles.placeName}>{item.name || 'Unknown Place'}</Text>
-        <Text style={styles.placeType}>{item.type || 'N/A'}</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.removeButton}
-        onPress={() => handleRemove(item.id)}
-      >
-        <Text style={styles.removeText}>Remove</Text>
-      </TouchableOpacity>
-    </View>
-  );
+        <View style={styles.cardWrapper}>
+          <PlaceCard
+            image={item.image}
+            title={item.name}
+            subtitle={item.type || 'Place'}
+            status={status}
+            onPress={() => handlePlacePress(item)}
+          />
+        </View>
+      </Swipeable>
+    );
+  };
+
+  const styles = createStyles(colors);
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Favourites</Text>
-        <Text style={styles.headerSubtitle}>
-          {favourites.length} {favourites.length === 1 ? 'place' : 'places'} saved
-        </Text>
-      </View>
+      {favourites.length > 0 && (
+        <View style={styles.infoBar}>
+          <Feather name="heart" size={18} color={colors.error} />
+          <Text style={styles.infoText}>
+            {favourites.length} {favourites.length === 1 ? 'favorite' : 'favorites'} saved
+          </Text>
+        </View>
+      )}
 
       {favourites.length > 0 ? (
         <FlatList
@@ -72,9 +98,10 @@ export default function FavoritesScreen({ navigation }) {
         />
       ) : (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No favourites yet</Text>
+          <Feather name="heart" size={64} color={colors.border} />
+          <Text style={styles.emptyText}>No favorites yet</Text>
           <Text style={styles.emptySubtext}>
-            Add places to your favourites from the Home screen
+            Tap the heart icon on places to save them here
           </Text>
         </View>
       )}
@@ -82,58 +109,46 @@ export default function FavoritesScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
   },
-  header: {
-    padding: spacing.lg,
-    backgroundColor: colors.primary,
+  infoBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.md,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    gap: spacing.sm,
   },
-  headerTitle: {
-    fontSize: fontSize.xxl,
-    fontWeight: 'bold',
-    color: colors.textLight,
-  },
-  headerSubtitle: {
+  infoText: {
     fontSize: fontSize.md,
-    color: colors.textLight,
-    marginTop: spacing.xs,
+    color: colors.text,
+    fontWeight: '600',
   },
   listContainer: {
     padding: spacing.md,
   },
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: 8,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: 'hidden',
+  cardWrapper: {
+    backgroundColor: colors.background,
   },
-  cardContent: {
-    padding: spacing.md,
-  },
-  placeName: {
-    fontSize: fontSize.lg,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: spacing.xs,
-  },
-  placeType: {
-    fontSize: fontSize.sm,
-    color: colors.primary,
-  },
-  removeButton: {
+  swipeAction: {
     backgroundColor: colors.error,
-    padding: spacing.sm,
+    justifyContent: 'center',
     alignItems: 'center',
+    width: 80,
+    marginBottom: spacing.md,
+    borderRadius: 12,
+    marginLeft: spacing.sm,
   },
-  removeText: {
+  swipeActionText: {
     color: colors.textLight,
-    fontWeight: 'bold',
     fontSize: fontSize.sm,
+    fontWeight: '600',
+    marginTop: spacing.xs,
   },
   emptyContainer: {
     flex: 1,
@@ -144,7 +159,8 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: fontSize.xl,
     fontWeight: 'bold',
-    color: colors.textSecondary,
+    color: colors.text,
+    marginTop: spacing.lg,
     marginBottom: spacing.sm,
   },
   emptySubtext: {

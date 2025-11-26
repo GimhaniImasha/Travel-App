@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,307 +8,466 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+  ImageBackground,
+  Animated,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { useForm, Controller } from 'react-hook-form';
+import { yupResolver } from '@hookform/resolvers/yup';
+import * as yup from 'yup';
+import { Feather } from '@expo/vector-icons';
+import { useDispatch } from 'react-redux';
 import { register as apiRegister } from '../../api/authApi';
+import { loginUser } from '../../redux/slices/authSlice';
 import { colors, spacing, fontSize } from '../../theme/theme';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Validation schema
+const registerSchema = yup.object().shape({
+  firstName: yup
+    .string()
+    .required('First name is required')
+    .min(2, 'First name must be at least 2 characters')
+    .matches(/^[A-Za-z\s]+$/, 'First name cannot contain numbers or special characters'),
+  lastName: yup
+    .string()
+    .required('Last name is required')
+    .min(2, 'Last name must be at least 2 characters')
+    .matches(/^[A-Za-z\s]+$/, 'Last name cannot contain numbers or special characters'),
+  email: yup
+    .string()
+    .required('Email is required')
+    .email('Please enter a valid email address')
+    .test('unique-email', 'This email is already registered', async function (value) {
+      if (!value) return true;
+      
+      // Check AsyncStorage for existing registered users
+      try {
+        const registeredUsers = await AsyncStorage.getItem('registered_users');
+        if (registeredUsers) {
+          const users = JSON.parse(registeredUsers);
+          const username = value.split('@')[0];
+          return !users.hasOwnProperty(username);
+        }
+      } catch (error) {
+        console.error('Error checking email uniqueness:', error);
+      }
+      return true;
+    }),
+  password: yup
+    .string()
+    .required('Password is required')
+    .min(8, 'Password must be at least 8 characters')
+    .matches(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .matches(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .matches(/[0-9]/, 'Password must contain at least one number')
+    .matches(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, 'Password must contain at least one special character'),
+  confirmPassword: yup
+    .string()
+    .required('Please confirm your password')
+    .oneOf([yup.ref('password')], 'Passwords do not match'),
+});
 
 export default function RegisterScreen({ navigation }) {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [registeredEmails] = useState(['emily.johnson@x.dummyjson.com', 'michael.williams@x.dummyjson.com']); // Mock existing emails
+  const dispatch = useDispatch();
+  const scrollViewRef = useRef(null);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  const validateEmail = (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
+  useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
-  const validatePassword = (password) => {
-    // At least 8 characters, one uppercase, one lowercase, one number AND one special character
-    const hasUpperCase = /[A-Z]/.test(password);
-    const hasLowerCase = /[a-z]/.test(password);
-    const hasNumber = /[0-9]/.test(password);
-    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
-    const isLongEnough = password.length >= 8;
-    
-    return hasUpperCase && hasLowerCase && hasNumber && hasSpecialChar && isLongEnough;
-  };
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm({
+    resolver: yupResolver(registerSchema),
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+    },
+  });
 
-  const getPasswordError = (password) => {
-    if (!password || !password.trim()) {
-      return 'Password is required';
-    }
-    if (password.length < 8) {
-      return 'Password must be at least 8 characters';
-    }
-    if (!/[A-Z]/.test(password)) {
-      return 'Password must contain at least one uppercase letter';
-    }
-    if (!/[a-z]/.test(password)) {
-      return 'Password must contain at least one lowercase letter';
-    }
-    if (!/[0-9]/.test(password)) {
-      return 'Password must contain at least one number';
-    }
-    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
-      return 'Password must contain at least one special character';
-    }
-    return null;
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (!firstName || !firstName.trim()) {
-      newErrors.firstName = 'First name is required';
-    } else if (firstName.trim().length < 2) {
-      newErrors.firstName = 'First name must be at least 2 characters';
-    }
-
-    if (!lastName || !lastName.trim()) {
-      newErrors.lastName = 'Last name is required';
-    } else if (lastName.trim().length < 2) {
-      newErrors.lastName = 'Last name must be at least 2 characters';
-    }
-
-    if (!email || !email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!validateEmail(email)) {
-      newErrors.email = 'Please enter a valid email address';
-    } else if (registeredEmails.includes(email.toLowerCase())) {
-      newErrors.email = 'This email is already registered';
-    }
-
-    const passwordError = getPasswordError(password);
-    if (passwordError) {
-      newErrors.password = passwordError;
-    }
-
-    if (!confirmPassword || !confirmPassword.trim()) {
-      newErrors.confirmPassword = 'Please confirm your password';
-    } else if (password !== confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleRegister = async () => {
-    if (!validateForm()) {
-      return;
-    }
-
+  const onSubmit = async (data) => {
     setLoading(true);
-    // Use email prefix as username for DummyJSON API
-    const username = email.split('@')[0];
-    const result = await apiRegister({ firstName, lastName, username, email, password });
-    setLoading(false);
+    
+    try {
+      // Use email prefix as username for DummyJSON API
+      const username = data.email.split('@')[0];
+      const result = await apiRegister({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        username,
+        email: data.email,
+        password: data.password,
+      });
 
-    if (result.success) {
-      // Add the registered email to the list
-      registeredEmails.push(email.toLowerCase());
-      
-      Alert.alert(
-        'Success',
-        `Account created successfully!\n\nYou can now login with:\nEmail: ${email}\nPassword: (your password)`,
-        [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
-      );
-    } else {
-      Alert.alert('Registration Failed', result.error);
+      if (result.success) {
+        Alert.alert(
+          'Success',
+          `Account created successfully!\n\nYou can now login with:\nEmail: ${data.email}`,
+          [
+            {
+              text: 'Login Now',
+              onPress: async () => {
+                // Auto login after registration
+                await dispatch(loginUser({ username, password: data.password }));
+              },
+            },
+          ]
+        );
+      } else {
+        Alert.alert('Registration Failed', result.error);
+      }
+    } catch (error) {
+      Alert.alert('Registration Failed', error.message || 'An error occurred');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Create Account</Text>
-      <Text style={styles.subtitle}>Join WanderMate Today</Text>
-
-      <View style={styles.form}>
-        <TextInput
-          style={[styles.input, errors.firstName && styles.inputError]}
-          placeholder="First Name *"
-          value={firstName}
-          onChangeText={(text) => {
-            setFirstName(text);
-            if (errors.firstName) setErrors({ ...errors, firstName: null });
-          }}
-        />
-        {errors.firstName && <Text style={styles.errorText}>{errors.firstName}</Text>}
-
-        <TextInput
-          style={[styles.input, errors.lastName && styles.inputError]}
-          placeholder="Last Name *"
-          value={lastName}
-          onChangeText={(text) => {
-            setLastName(text);
-            if (errors.lastName) setErrors({ ...errors, lastName: null });
-          }}
-        />
-        {errors.lastName && <Text style={styles.errorText}>{errors.lastName}</Text>}
-
-        <TextInput
-          style={[styles.input, errors.email && styles.inputError]}
-          placeholder="Email *"
-          value={email}
-          onChangeText={(text) => {
-            setEmail(text);
-            if (errors.email) setErrors({ ...errors, email: null });
-          }}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
-        {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
-
-        <View style={styles.passwordContainer}>
-          <TextInput
-            style={[styles.passwordInput, errors.password && styles.inputError]}
-            placeholder="Password *"
-            value={password}
-            onChangeText={(text) => {
-              setPassword(text);
-              if (errors.password) setErrors({ ...errors, password: null });
-            }}
-            secureTextEntry={!showPassword}
-            autoCapitalize="none"
-          />
-          <TouchableOpacity
-            style={styles.eyeIcon}
-            onPress={() => setShowPassword(!showPassword)}
-          >
-            <Ionicons
-              name={showPassword ? 'eye-off' : 'eye'}
-              size={24}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
-        </View>
-        {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
-
-        <View style={styles.passwordContainer}>
-          <TextInput
-            style={[styles.passwordInput, errors.confirmPassword && styles.inputError]}
-            placeholder="Confirm Password *"
-            value={confirmPassword}
-            onChangeText={(text) => {
-              setConfirmPassword(text);
-              if (errors.confirmPassword) setErrors({ ...errors, confirmPassword: null });
-            }}
-            secureTextEntry={!showConfirmPassword}
-            autoCapitalize="none"
-          />
-          <TouchableOpacity
-            style={styles.eyeIcon}
-            onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-          >
-            <Ionicons
-              name={showConfirmPassword ? 'eye-off' : 'eye'}
-              size={24}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
-        </View>
-        {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
-
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleRegister}
-          disabled={loading}
+    <ImageBackground
+      source={require('../../../assets/loginBackground.gif')}
+      style={styles.container}
+      resizeMode="cover"
+    >
+      <View style={styles.overlay} />
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoid}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      >
+        <ScrollView
+          ref={scrollViewRef}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          bounces={false}
         >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Register</Text>
-          )}
-        </TouchableOpacity>
+          <Animated.View style={[styles.formContainer, { opacity: fadeAnim }]}>
+            <Text style={styles.title}>Create Account</Text>
+            <Text style={styles.subtitle}>Join WanderMate Today</Text>
 
-        <TouchableOpacity
-          style={styles.linkButton}
-          onPress={() => navigation.navigate('Login')}
-        >
-          <Text style={styles.linkText}>
-            <Text style={styles.linkTextGray}>Already have an account? </Text>
-            <Text style={styles.linkTextBlue}>Login</Text>
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+          {/* First Name */}
+          <View style={styles.inputContainer}>
+            <Controller
+              control={control}
+              name="firstName"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <View>
+                  <View style={styles.inputWrapper}>
+                    <Feather name="user" size={20} color="rgba(255, 255, 255, 0.7)" style={styles.inputIcon} />
+                    <TextInput
+                      style={[styles.input, errors.firstName && styles.inputError]}
+                      placeholder="First Name"
+                      placeholderTextColor="rgba(255, 255, 255, 0.7)"
+                      value={value}
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      onFocus={() => {
+                        setTimeout(() => {
+                          scrollViewRef.current?.scrollTo({ y: 150, animated: true });
+                        }, 100);
+                      }}
+                      autoCapitalize="words"
+                    />
+                  </View>
+                  {errors.firstName && (
+                    <View style={styles.errorContainer}>
+                      <Feather name="alert-circle" size={14} color={colors.error} />
+                      <Text style={styles.errorText}>{errors.firstName.message}</Text>
+                    </View>
+                  )}
+                </View>
+              )}
+            />
+          </View>
+
+          {/* Last Name */}
+          <View style={styles.inputContainer}>
+            <Controller
+              control={control}
+              name="lastName"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <View>
+                  <View style={styles.inputWrapper}>
+                    <Feather name="user" size={20} color="rgba(255, 255, 255, 0.7)" style={styles.inputIcon} />
+                    <TextInput
+                      style={[styles.input, errors.lastName && styles.inputError]}
+                      placeholder="Last Name"
+                      placeholderTextColor="rgba(255, 255, 255, 0.7)"
+                      value={value}
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      onFocus={() => setTimeout(() => scrollViewRef.current?.scrollTo({ y: 220, animated: true }), 100)}
+                      autoCapitalize="words"
+                    />
+                  </View>
+                  {errors.lastName && (
+                    <View style={styles.errorContainer}>
+                      <Feather name="alert-circle" size={14} color={colors.error} />
+                      <Text style={styles.errorText}>{errors.lastName.message}</Text>
+                    </View>
+                  )}
+                </View>
+              )}
+            />
+          </View>
+
+          {/* Email */}
+          <View style={styles.inputContainer}>
+            <Controller
+              control={control}
+              name="email"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <View>
+                  <View style={styles.inputWrapper}>
+                    <Feather name="mail" size={20} color="rgba(255, 255, 255, 0.7)" style={styles.inputIcon} />
+                    <TextInput
+                      style={[styles.input, errors.email && styles.inputError]}
+                      placeholder="Email"
+                      placeholderTextColor="rgba(255, 255, 255, 0.7)"
+                      value={value}
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      onFocus={() => setTimeout(() => scrollViewRef.current?.scrollTo({ y: 300, animated: true }), 100)}
+                      autoCapitalize="none"
+                      keyboardType="email-address"
+                      autoComplete="email"
+                    />
+                  </View>
+                  {errors.email && (
+                    <View style={styles.errorContainer}>
+                      <Feather name="alert-circle" size={14} color={colors.error} />
+                      <Text style={styles.errorText}>{errors.email.message}</Text>
+                    </View>
+                  )}
+                </View>
+              )}
+            />
+          </View>
+
+          {/* Password */}
+          <View style={styles.inputContainer}>
+            <Controller
+              control={control}
+              name="password"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <View>
+                  <View style={styles.inputWrapper}>
+                    <Feather name="lock" size={20} color="rgba(255, 255, 255, 0.7)" style={styles.inputIcon} />
+                    <TextInput
+                      style={[styles.input, errors.password && styles.inputError]}
+                      placeholder="Password"
+                      placeholderTextColor="rgba(255, 255, 255, 0.7)"
+                      value={value}
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      onFocus={() => setTimeout(() => scrollViewRef.current?.scrollTo({ y: 400, animated: true }), 100)}
+                      secureTextEntry={!showPassword}
+                      autoCapitalize="none"
+                    />
+                    <TouchableOpacity
+                      style={styles.eyeIcon}
+                      onPress={() => setShowPassword(!showPassword)}
+                    >
+                      <Feather
+                        name={showPassword ? 'eye-off' : 'eye'}
+                        size={20}
+                        color="rgba(255, 255, 255, 0.7)"
+                      />
+                    </TouchableOpacity>
+                  </View>
+                  {errors.password && (
+                    <View style={styles.errorContainer}>
+                      <Feather name="alert-circle" size={14} color={colors.error} />
+                      <Text style={styles.errorText}>{errors.password.message}</Text>
+                    </View>
+                  )}
+                </View>
+              )}
+            />
+          </View>
+
+          {/* Confirm Password */}
+          <View style={styles.inputContainer}>
+            <Controller
+              control={control}
+              name="confirmPassword"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <View>
+                  <View style={styles.inputWrapper}>
+                    <Feather name="lock" size={20} color="rgba(255, 255, 255, 0.7)" style={styles.inputIcon} />
+                    <TextInput
+                      style={[styles.input, errors.confirmPassword && styles.inputError]}
+                      placeholder="Confirm Password"
+                      placeholderTextColor="rgba(255, 255, 255, 0.7)"
+                      value={value}
+                      onChangeText={onChange}
+                      onBlur={onBlur}
+                      onFocus={() => setTimeout(() => scrollViewRef.current?.scrollTo({ y: 500, animated: true }), 100)}
+                      secureTextEntry={!showConfirmPassword}
+                      autoCapitalize="none"
+                    />
+                    <TouchableOpacity
+                      style={styles.eyeIcon}
+                      onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                    >
+                      <Feather
+                        name={showConfirmPassword ? 'eye-off' : 'eye'}
+                        size={20}
+                        color="rgba(255, 255, 255, 0.7)"
+                      />
+                    </TouchableOpacity>
+                  </View>
+                  {errors.confirmPassword && (
+                    <View style={styles.errorContainer}>
+                      <Feather name="alert-circle" size={14} color={colors.error} />
+                      <Text style={styles.errorText}>{errors.confirmPassword.message}</Text>
+                    </View>
+                  )}
+                </View>
+              )}
+            />
+          </View>
+
+          {/* Register Button */}
+          <TouchableOpacity
+            style={[styles.button, loading && styles.buttonDisabled]}
+            onPress={handleSubmit(onSubmit)}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.buttonText}>Register</Text>
+            )}
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.linkButton}
+            onPress={() => navigation.navigate('Login')}
+          >
+            <Text style={styles.linkText}>
+              Already have an account? <Text style={styles.linkTextBold}>Login</Text>
+            </Text>
+          </TouchableOpacity>
+          </Animated.View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+  },
+  keyboardAvoid: {
+    flex: 1,
+  },
+  scrollContent: {
     flexGrow: 1,
-    backgroundColor: colors.background,
     justifyContent: 'center',
-    padding: spacing.lg,
+    paddingVertical: spacing.xxxl,
+  },
+  formContainer: {
+    marginHorizontal: spacing.lg,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 16,
+    padding: spacing.xl,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   title: {
     fontSize: fontSize.xxxl,
     fontWeight: 'bold',
-    color: colors.primary,
+    color: '#FFFFFF',
+    marginBottom: spacing.xs,
     textAlign: 'center',
-    marginBottom: spacing.sm,
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
   },
   subtitle: {
-    fontSize: fontSize.lg,
-    color: colors.textSecondary,
-    textAlign: 'center',
+    fontSize: fontSize.md,
+    color: '#FFFFFF',
     marginBottom: spacing.xl,
+    textAlign: 'center',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
-  form: {
-    width: '100%',
+  inputContainer: {
+    marginBottom: spacing.md,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
+    borderRadius: 8,
+    paddingHorizontal: spacing.md,
+  },
+  inputIcon: {
+    marginRight: spacing.sm,
   },
   input: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
+    flex: 1,
     padding: spacing.md,
-    marginBottom: spacing.xs,
     fontSize: fontSize.md,
-  },
-  passwordContainer: {
-    position: 'relative',
-    marginBottom: spacing.xs,
-  },
-  passwordInput: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    padding: spacing.md,
-    paddingRight: 50,
-    fontSize: fontSize.md,
-  },
-  eyeIcon: {
-    position: 'absolute',
-    right: 12,
-    top: 12,
-    padding: 4,
+    color: '#FFFFFF',
   },
   inputError: {
     borderColor: colors.error,
   },
+  eyeIcon: {
+    padding: spacing.sm,
+  },
+  errorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.xs,
+    paddingHorizontal: spacing.xs,
+  },
   errorText: {
     color: colors.error,
     fontSize: fontSize.sm,
-    marginBottom: spacing.md,
-    marginTop: -spacing.xs,
+    marginLeft: spacing.xs,
+    flex: 1,
   },
   button: {
     backgroundColor: colors.primary,
     padding: spacing.md,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: spacing.md,
+    marginTop: spacing.lg,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
   buttonText: {
     color: colors.textLight,
@@ -321,12 +480,13 @@ const styles = StyleSheet.create({
   },
   linkText: {
     fontSize: fontSize.md,
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
-  linkTextGray: {
-    color: colors.textSecondary,
-  },
-  linkTextBlue: {
-    color: colors.primary,
-    fontWeight: '600',
+  linkTextBold: {
+    color: '#2196F3',
+    fontWeight: '700',
   },
 });

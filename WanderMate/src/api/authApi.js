@@ -1,4 +1,5 @@
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Create axios instance for DummyJSON API
 const authClient = axios.create({
@@ -9,8 +10,46 @@ const authClient = axios.create({
   },
 });
 
+// Storage key for registered users
+const REGISTERED_USERS_KEY = 'registered_users';
+
 // Store registered users in memory (in a real app, this would be in backend/database)
 const registeredUsers = new Map();
+
+/**
+ * Load registered users from AsyncStorage into memory
+ */
+const loadRegisteredUsers = async () => {
+  try {
+    const data = await AsyncStorage.getItem(REGISTERED_USERS_KEY);
+    if (data) {
+      const users = JSON.parse(data);
+      Object.entries(users).forEach(([username, userData]) => {
+        registeredUsers.set(username, userData);
+      });
+    }
+  } catch (error) {
+    console.error('Error loading registered users:', error);
+  }
+};
+
+/**
+ * Save registered users from memory to AsyncStorage
+ */
+const saveRegisteredUsers = async () => {
+  try {
+    const users = {};
+    registeredUsers.forEach((userData, username) => {
+      users[username] = userData;
+    });
+    await AsyncStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(users));
+  } catch (error) {
+    console.error('Error saving registered users:', error);
+  }
+};
+
+// Load users on module initialization
+loadRegisteredUsers();
 
 /**
  * Login user with username and password
@@ -34,6 +73,9 @@ export const login = async ({ username, password }) => {
         error: 'Username and password are required',
       };
     }
+
+    // Ensure users are loaded from storage
+    await loadRegisteredUsers();
 
     // Check if user is registered locally first
     const localUser = registeredUsers.get(username);
@@ -108,6 +150,9 @@ export const register = async ({ firstName, lastName, username, email, password 
       };
     }
 
+    // Ensure users are loaded from storage
+    await loadRegisteredUsers();
+
     // Check if username already exists
     if (registeredUsers.has(username)) {
       return {
@@ -127,6 +172,9 @@ export const register = async ({ firstName, lastName, username, email, password 
       password,
       email,
     });
+
+    // Persist to AsyncStorage
+    await saveRegisteredUsers();
 
     // Also try to register with DummyJSON (optional, for demo)
     try {

@@ -43,11 +43,6 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    },
-    "extra": {
-      "TAPI_APP_ID": "f3f35872",
-      "TAPI_APP_KEY": "62dfbc29c608b27e5fe31ddbdb475122"
     }
-    
   }
 }
