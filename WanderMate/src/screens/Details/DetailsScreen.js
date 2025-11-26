@@ -8,7 +8,7 @@ import {
   Image,
 } from 'react-native';
 import { useSelector, useDispatch } from 'react-redux';
-import { Feather } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { addFavorite, removeFavorite } from '../../redux/slices/favouritesSlice';
 import StationItem from '../../components/StationItem';
 import { useTheme } from '../../theme/ThemeProvider';
@@ -114,7 +114,7 @@ export default function DetailsScreen({ route, navigation }) {
 
   return (
     <ScrollView style={styles.container}>
-      {/* Banner Image */}
+      {/* Banner Image with Overlay */}
       <View style={styles.imageContainer}>
         <Image
           source={getImageSource()}
@@ -122,83 +122,83 @@ export default function DetailsScreen({ route, navigation }) {
           resizeMode="cover"
           onError={(e) => console.log('Banner image error:', place.image, e.nativeEvent.error)}
         />
+        <View style={styles.imageOverlay} />
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Feather name="arrow-left" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
         <TouchableOpacity
           style={styles.favouriteButton}
           onPress={toggleFavourite}
         >
           <Feather
-            name={isFavourite ? 'heart' : 'heart'}
-            size={24}
-            color={isFavourite ? colors.error : colors.textLight}
-            fill={isFavourite ? colors.error : 'transparent'}
+            name={isFavourite ? "heart" : "heart"}
+            size={28}
+            color={isFavourite ? "#FF5252" : "#FFFFFF"}
+            fill={isFavourite ? "#FF5252" : "none"}
+            style={{ opacity: 1 }}
           />
         </TouchableOpacity>
+        {/* Title on Image */}
+        <View style={styles.titleOverlay}>
+          <Text style={styles.titleOnImage}>{place.name}</Text>
+          {place.rating && (
+            <View style={styles.ratingOverlay}>
+              <Feather name="star" size={16} color="#FFC107" fill="#FFC107" />
+              <Text style={styles.ratingTextOverlay}>{place.rating} (13k reviews)</Text>
+            </View>
+          )}
+        </View>
+        {/* Curved White Container */}
+        <View style={styles.curvedContainer} />
       </View>
 
       {/* Place Details */}
       <View style={styles.detailsContainer}>
-        <Text style={styles.title}>{place.name}</Text>
-        
-        <View style={styles.infoRow}>
-          <Feather name="tag" size={16} color={colors.textSecondary} />
-          <Text style={styles.infoText}>Type: {place.type || 'Unknown'}</Text>
-        </View>
-
+        {/* Description Section */}
         {place.description && (
-          <View style={styles.infoRow}>
-            <Feather name="file-text" size={16} color={colors.textSecondary} />
-            <Text style={styles.infoText}>{place.description}</Text>
+          <View style={styles.descriptionSection}>
+            <Text style={styles.sectionLabel}>Description</Text>
+            <Text style={styles.descriptionText}>{place.description}</Text>
+            {place.price && (
+              <Text style={styles.priceText}>Price</Text>
+            )}
+            {place.price && (
+              <Text style={styles.priceAmount}>${place.price}</Text>
+            )}
           </View>
         )}
-
-        <View style={styles.infoRow}>
-          <Feather name="map-pin" size={16} color={colors.textSecondary} />
-          <Text style={styles.infoText}>
-            Coordinates: {place.latitude || 'N/A'}, {place.longitude || 'N/A'}
-          </Text>
-        </View>
 
         {/* Weather Section */}
         {weather && (weather.temperature || weather.description) && (
           <View style={styles.weatherCard}>
-            <View style={styles.sectionHeader}>
-              <Feather name="cloud" size={24} color={colors.primary} />
-              <Text style={styles.sectionTitle}>Weather</Text>
-            </View>
-            <View style={styles.weatherContent}>
-              {weather.temperature && (
-                <Text style={styles.weatherText}>
-                  🌡️ {weather.temperature}°C
-                </Text>
-              )}
-              {weather.description && (
-                <Text style={styles.weatherDescription}>{weather.description}</Text>
-              )}
+            <View style={styles.weatherHeader}>
+              <View style={styles.weatherTitleRow}>
+                <Feather name="cloud" size={20} color={colors.primary} />
+                <Text style={styles.sectionTitle}>Weather</Text>
+              </View>
+              <View style={styles.weatherInfo}>
+                {weather.temperature && (
+                  <Text style={styles.weatherTemp}>{weather.temperature}°C</Text>
+                )}
+                {weather.description && (
+                  <Text style={styles.weatherDesc}>{weather.description}</Text>
+                )}
+              </View>
             </View>
           </View>
         )}
 
-        {/* Show Nearby Transport Button */}
+        {/* Nearby Transport - Always Show */}
         {(nearbyBusStops.length > 0 || nearbyTrainStations.length > 0) && (
-          <TouchableOpacity
-            style={styles.transportButton}
-            onPress={handleShowNearbyTransport}
-          >
-            <Feather name="navigation" size={20} color={colors.textLight} />
-            <Text style={styles.transportButtonText}>
-              {showTransport ? 'Hide Nearby Transport' : 'Show Nearby Transport'}
-            </Text>
-          </TouchableOpacity>
-        )}
-
-        {/* Transport Results */}
-        {showTransport && (
           <>
             {/* Nearby Bus Stops */}
             {nearbyBusStops.length > 0 && (
               <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <Feather name="navigation" size={24} color={colors.primary} />
+                <View style={styles.sectionHeaderRow}>
+                  <Ionicons name="bus" size={22} color={colors.primary} />
                   <Text style={styles.sectionTitle}>Nearby Bus Stops</Text>
                 </View>
 
@@ -230,8 +230,8 @@ export default function DetailsScreen({ route, navigation }) {
             {/* Nearby Train Stations */}
             {nearbyTrainStations.length > 0 && (
               <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <Feather name="navigation-2" size={24} color={colors.primary} />
+                <View style={styles.sectionHeaderRow}>
+                  <Ionicons name="train" size={22} color={colors.primary} />
                   <Text style={styles.sectionTitle}>Nearby Train Stations</Text>
                 </View>
 
@@ -265,8 +265,8 @@ export default function DetailsScreen({ route, navigation }) {
         {/* Nearby Hotels Section */}
         {nearbyHotels.length > 0 && (
           <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <Feather name="home" size={24} color={colors.primary} />
+            <View style={styles.sectionHeaderRow}>
+              <Feather name="home" size={20} color={colors.primary} />
               <Text style={styles.sectionTitle}>Nearby Hotels</Text>
             </View>
 
@@ -294,7 +294,7 @@ export default function DetailsScreen({ route, navigation }) {
 const createStyles = (colors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: '#E8F5E9',
   },
   centerContainer: {
     flex: 1,
@@ -304,58 +304,141 @@ const createStyles = (colors) => StyleSheet.create({
   },
   imageContainer: {
     position: 'relative',
+    height: 380,
   },
   bannerImage: {
     width: '100%',
-    height: 250,
+    height: '100%',
     backgroundColor: colors.border,
+  },
+  imageOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.25)',
+  },
+  curvedContainer: {
+    position: 'absolute',
+    bottom: -1,
+    width: '100%',
+    height: 40,
+    backgroundColor: '#E8F5E9',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+  },
+  titleOverlay: {
+    position: 'absolute',
+    bottom: 60,
+    left: spacing.lg,
+    right: spacing.lg,
+  },
+  titleOnImage: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 4,
+    marginBottom: spacing.xs,
+  },
+  ratingOverlay: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.xs,
+  },
+  ratingTextOverlay: {
+    color: '#FFFFFF',
+    fontSize: fontSize.sm,
+    marginLeft: spacing.xs,
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  backButton: {
+    position: 'absolute',
+    top: spacing.lg + 10,
+    left: spacing.md,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   favouriteButton: {
     position: 'absolute',
-    top: spacing.md,
+    top: spacing.lg + 10,
     right: spacing.md,
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(255,255,255,0.3)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   detailsContainer: {
     padding: spacing.lg,
+    paddingTop: spacing.sm,
   },
-  title: {
-    fontSize: fontSize.xxl,
-    fontWeight: 'bold',
-    color: colors.text,
+  descriptionSection: {
+    backgroundColor: 'rgba(255, 255, 255, 0.35)',
+    borderRadius: 16,
+    padding: spacing.lg,
     marginBottom: spacing.md,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.6)',
   },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  sectionLabel: {
+    fontSize: fontSize.xl,
+    fontWeight: '600',
+    color: colors.text,
     marginBottom: spacing.sm,
   },
-  infoText: {
+  descriptionText: {
+    fontSize: fontSize.lg,
+    color: colors.textSecondary,
+    lineHeight: 24,
+  },
+  priceText: {
     fontSize: fontSize.md,
     color: colors.textSecondary,
-    marginLeft: spacing.sm,
-    flex: 1,
+    marginTop: spacing.md,
   },
-  transportButton: {
+  priceAmount: {
+    fontSize: fontSize.xxl,
+    fontWeight: 'bold',
+    color: '#FF6B35',
+    marginTop: spacing.xs,
+  },
+  weatherCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.35)',
+    borderRadius: 16,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.6)',
+  },
+  weatherHeader: {
     flexDirection: 'row',
-    backgroundColor: colors.primary,
-    padding: spacing.md,
-    borderRadius: 8,
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: spacing.lg,
+  },
+  weatherTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.sm,
   },
-  transportButtonText: {
-    color: colors.textLight,
-    fontSize: fontSize.md,
-    fontWeight: '600',
-    marginLeft: spacing.sm,
+  weatherInfo: {
+    alignItems: 'flex-end',
+  },
+  weatherTemp: {
+    fontSize: fontSize.xl,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  weatherDesc: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    textTransform: 'capitalize',
+    marginTop: 2,
   },
   errorText: {
     color: colors.error,
@@ -364,26 +447,31 @@ const createStyles = (colors) => StyleSheet.create({
     textAlign: 'center',
   },
   section: {
-    marginTop: spacing.xl,
+    marginTop: spacing.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.35)',
+    borderRadius: 16,
+    padding: spacing.lg,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.6)',
   },
-  sectionHeader: {
+  sectionHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: spacing.md,
+    gap: spacing.sm,
   },
   sectionTitle: {
     fontSize: fontSize.xl,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: colors.text,
-    marginLeft: spacing.sm,
   },
   stopContainer: {
-    backgroundColor: colors.surface,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
     borderRadius: 12,
     padding: spacing.md,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: 'rgba(255, 255, 255, 0.7)',
   },
   stopHeader: {
     flexDirection: 'row',
@@ -393,6 +481,11 @@ const createStyles = (colors) => StyleSheet.create({
     paddingBottom: spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+  },
+  stopNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   stopName: {
     fontSize: fontSize.lg,
@@ -421,35 +514,13 @@ const createStyles = (colors) => StyleSheet.create({
     color: colors.textSecondary,
     marginTop: spacing.md,
   },
-  weatherCard: {
-    backgroundColor: colors.surface,
-    borderRadius: 12,
-    padding: spacing.lg,
-    marginTop: spacing.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  weatherContent: {
-    marginTop: spacing.md,
-  },
-  weatherText: {
-    fontSize: fontSize.xl,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: spacing.sm,
-  },
-  weatherDescription: {
-    fontSize: fontSize.md,
-    color: colors.textSecondary,
-    textTransform: 'capitalize',
-  },
   hotelCard: {
-    backgroundColor: colors.surface,
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
     borderRadius: 12,
     padding: spacing.md,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: 'rgba(255, 255, 255, 0.7)',
   },
   hotelHeader: {
     flexDirection: 'row',

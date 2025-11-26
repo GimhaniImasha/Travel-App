@@ -1,21 +1,21 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../theme/ThemeProvider';
 import { spacing, fontSize } from '../theme/theme';
 
 export default function StationItem({ route, destination, time, type }) {
   const theme = useTheme();
   const { colors } = theme;
-  const icon = type === 'bus' ? 'truck' : 'train';
-  const iconColor = type === 'bus' ? colors.info : colors.success;
+  const icon = type === 'bus' ? 'bus' : 'train';
+  const iconColor = colors.primary;
 
   const styles = createStyles(colors);
 
   return (
     <View style={styles.container}>
       <View style={styles.iconContainer}>
-        <Feather name={icon} size={20} color={iconColor} />
+        <Ionicons name={icon} size={22} color={iconColor} />
       </View>
       <View style={styles.detailsContainer}>
         <View style={styles.routeRow}>

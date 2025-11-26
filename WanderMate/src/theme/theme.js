@@ -1,9 +1,9 @@
 // Light Theme
 export const lightTheme = {
   colors: {
-    primary: '#2196F3',
-    primaryDark: '#1976D2',
-    primaryLight: '#BBDEFB',
+    primary: '#2E7D32',
+    primaryDark: '#1B5E20',
+    primaryLight: '#A5D6A7',
     secondary: '#FF5722',
     secondaryDark: '#E64A19',
     secondaryLight: '#FFCCBC',
@@ -22,7 +22,7 @@ export const lightTheme = {
     success: '#4CAF50',
     error: '#F44336',
     warning: '#FFC107',
-    info: '#2196F3',
+    info: '#2E7D32',
     
     shadow: '#000000',
   },
@@ -31,9 +31,9 @@ export const lightTheme = {
 // Dark Theme
 export const darkTheme = {
   colors: {
-    primary: '#2196F3',
-    primaryDark: '#1565C0',
-    primaryLight: '#42A5F5',
+    primary: '#66BB6A',
+    primaryDark: '#2E7D32',
+    primaryLight: '#81C784',
     secondary: '#FF5722',
     secondaryDark: '#D84315',
     secondaryLight: '#FF7043',
@@ -52,7 +52,7 @@ export const darkTheme = {
     success: '#4CAF50',
     error: '#F44336',
     warning: '#FFC107',
-    info: '#2196F3',
+    info: '#66BB6A',
     
     shadow: '#000000',
   },

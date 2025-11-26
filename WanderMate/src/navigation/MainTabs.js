@@ -6,6 +6,7 @@ import { useSelector } from 'react-redux';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import HomeScreen from '../screens/Home/HomeScreen';
 import DetailsScreen from '../screens/Details/DetailsScreen';
+import ExploreScreen from '../screens/Explore/ExploreScreen';
 import FavoritesScreen from '../screens/Favorites/FavoritesScreen';
 import ProfileScreen from '../screens/Profile/ProfileScreen';
 import { useTheme } from '../theme/ThemeProvider';
@@ -13,6 +14,7 @@ import { spacing, fontSize } from '../theme/theme';
 
 const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
+const ExploreStack = createNativeStackNavigator();
 const FavoritesStack = createNativeStackNavigator();
 
 function CustomHomeHeader({ navigation, onSearch }) {
@@ -102,11 +104,45 @@ function HomeStackNavigator() {
         name="Details"
         component={DetailsScreen}
         options={{
-          title: 'Place Details',
-          headerShown: true,
+          headerShown: false,
         }}
       />
     </HomeStack.Navigator>
+  );
+}
+
+function ExploreStackNavigator() {
+  const theme = useTheme();
+  const { colors } = theme;
+
+  return (
+    <ExploreStack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: colors.primary,
+        },
+        headerTintColor: colors.textLight,
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+      }}
+    >
+      <ExploreStack.Screen
+        name="ExploreMain"
+        component={ExploreScreen}
+        options={{
+          title: 'Explore',
+          headerShown: false,
+        }}
+      />
+      <ExploreStack.Screen
+        name="Details"
+        component={DetailsScreen}
+        options={{
+          headerShown: false,
+        }}
+      />
+    </ExploreStack.Navigator>
   );
 }
 
@@ -138,8 +174,7 @@ function FavoritesStackNavigator() {
         name="Details"
         component={DetailsScreen}
         options={{
-          title: 'Place Details',
-          headerShown: true,
+          headerShown: false,
         }}
       />
     </FavoritesStack.Navigator>
@@ -167,6 +202,15 @@ export default function MainTabs() {
         options={{
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Explore"
+        component={ExploreStackNavigator}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="compass" size={size} color={color} />
           ),
         }}
       />
