@@ -120,7 +120,6 @@ export default function DetailsScreen({ route, navigation }) {
           source={getImageSource()}
           style={styles.bannerImage}
           resizeMode="cover"
-          onError={(e) => console.log('Banner image error:', place.image, e.nativeEvent.error)}
         />
         <View style={styles.imageOverlay} />
         <TouchableOpacity
@@ -294,7 +293,7 @@ export default function DetailsScreen({ route, navigation }) {
 const createStyles = (colors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#E8F5E9',
+    backgroundColor: colors.backgroundLight,
   },
   centerContainer: {
     flex: 1,
@@ -320,7 +319,7 @@ const createStyles = (colors) => StyleSheet.create({
     bottom: -1,
     width: '100%',
     height: 40,
-    backgroundColor: '#E8F5E9',
+    backgroundColor: colors.backgroundLight,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
   },
@@ -379,12 +378,12 @@ const createStyles = (colors) => StyleSheet.create({
     paddingTop: spacing.sm,
   },
   descriptionSection: {
-    backgroundColor: 'rgba(255, 255, 255, 0.35)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 16,
     padding: spacing.lg,
     marginBottom: spacing.md,
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.6)',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   sectionLabel: {
     fontSize: fontSize.xl,
@@ -409,12 +408,12 @@ const createStyles = (colors) => StyleSheet.create({
     marginTop: spacing.xs,
   },
   weatherCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.35)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 16,
     padding: spacing.lg,
     marginBottom: spacing.md,
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.6)',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   weatherHeader: {
     flexDirection: 'row',
@@ -448,11 +447,11 @@ const createStyles = (colors) => StyleSheet.create({
   },
   section: {
     marginTop: spacing.md,
-    backgroundColor: 'rgba(255, 255, 255, 0.35)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 16,
     padding: spacing.lg,
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.6)',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   sectionHeaderRow: {
     flexDirection: 'row',
@@ -466,12 +465,12 @@ const createStyles = (colors) => StyleSheet.create({
     color: colors.text,
   },
   stopContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderRadius: 12,
     padding: spacing.md,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.7)',
+    borderColor: 'rgba(255, 255, 255, 0.25)',
   },
   stopHeader: {
     flexDirection: 'row',
@@ -515,12 +514,12 @@ const createStyles = (colors) => StyleSheet.create({
     marginTop: spacing.md,
   },
   hotelCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderRadius: 12,
     padding: spacing.md,
     marginBottom: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.7)',
+    borderColor: 'rgba(255, 255, 255, 0.25)',
   },
   hotelHeader: {
     flexDirection: 'row',

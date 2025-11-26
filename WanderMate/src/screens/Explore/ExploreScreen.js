@@ -208,7 +208,7 @@ export default function ExploreScreen({ navigation }) {
 const createStyles = (colors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#E8F5E9',
+    backgroundColor: colors.backgroundLight,
   },
   headerContainer: {
     paddingHorizontal: spacing.lg,
