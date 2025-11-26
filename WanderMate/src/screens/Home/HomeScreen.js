@@ -311,7 +311,7 @@ export default function HomeScreen({ navigation }) {
 const createStyles = (colors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#E8F5E9',
+    backgroundColor: colors.backgroundLight,
   },
   headerBackground: {
     width: '100%',
@@ -416,11 +416,11 @@ const createStyles = (colors) => StyleSheet.create({
   },
   popularCardWrapper: {
     marginRight: spacing.md,
-    backgroundColor: 'rgba(255, 255, 255, 0.35)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 16,
     padding: 10,
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.6)',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,

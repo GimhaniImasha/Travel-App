@@ -166,8 +166,7 @@ function FavoritesStackNavigator() {
         name="FavoritesMain"
         component={FavoritesScreen}
         options={{
-          title: 'My Favorites',
-          headerShown: true,
+          headerShown: false,
         }}
       />
       <FavoritesStack.Screen
@@ -204,6 +203,12 @@ export default function MainTabs() {
             <Ionicons name="home" size={size} color={color} />
           ),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('Home', { screen: 'HomeMain' });
+          },
+        })}
       />
       <Tab.Screen
         name="Explore"
@@ -213,6 +218,12 @@ export default function MainTabs() {
             <Ionicons name="compass" size={size} color={color} />
           ),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('Explore', { screen: 'ExploreMain' });
+          },
+        })}
       />
       <Tab.Screen
         name="Favorites"
@@ -222,20 +233,18 @@ export default function MainTabs() {
             <Ionicons name="heart" size={size} color={color} />
           ),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate('Favorites', { screen: 'FavoritesMain' });
+          },
+        })}
       />
       <Tab.Screen
         name="Profile"
         component={ProfileScreen}
         options={{
-          headerShown: true,
-          headerStyle: {
-            backgroundColor: colors.primary,
-          },
-          headerTintColor: colors.textLight,
-          headerTitleStyle: {
-            fontWeight: 'bold',
-          },
-          title: 'My Profile',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person" size={size} color={color} />
           ),

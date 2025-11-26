@@ -78,32 +78,42 @@ export default function FavoritesScreen({ navigation }) {
 
   const styles = createStyles(colors);
 
-  return (
-    <View style={styles.container}>
+  const renderHeader = () => (
+    <View style={styles.headerContainer}>
+      <Text style={styles.headerTitle}>My Favorites</Text>
+      <Text style={styles.headerSubtitle}>Places you love to visit</Text>
       {favourites.length > 0 && (
         <View style={styles.infoBar}>
-          <Feather name="heart" size={18} color={colors.error} />
+          <Feather name="heart" size={18} color={colors.error} fill={colors.error} />
           <Text style={styles.infoText}>
             {favourites.length} {favourites.length === 1 ? 'favorite' : 'favorites'} saved
           </Text>
         </View>
       )}
+    </View>
+  );
 
+  return (
+    <View style={styles.container}>
       {favourites.length > 0 ? (
         <FlatList
+          ListHeaderComponent={renderHeader}
           data={favourites}
           renderItem={renderFavourite}
           keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
           contentContainerStyle={styles.listContainer}
         />
       ) : (
-        <View style={styles.emptyContainer}>
-          <Feather name="heart" size={64} color={colors.border} />
-          <Text style={styles.emptyText}>No favorites yet</Text>
-          <Text style={styles.emptySubtext}>
-            Tap the heart icon on places to save them here
-          </Text>
-        </View>
+        <>
+          {renderHeader()}
+          <View style={styles.emptyContainer}>
+            <Feather name="heart" size={64} color={colors.border} />
+            <Text style={styles.emptyText}>No favorites yet</Text>
+            <Text style={styles.emptySubtext}>
+              Tap the heart icon on places to save them here
+            </Text>
+          </View>
+        </>
       )}
     </View>
   );
@@ -112,17 +122,35 @@ export default function FavoritesScreen({ navigation }) {
 const createStyles = (colors) => StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.backgroundLight,
+  },
+  headerContainer: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xxl + spacing.md,
+    paddingBottom: spacing.md,
+  },
+  headerTitle: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: spacing.xs,
+  },
+  headerSubtitle: {
+    fontSize: fontSize.lg,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
   },
   infoBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.md,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
     gap: spacing.sm,
+    marginTop: spacing.sm,
   },
   infoText: {
     fontSize: fontSize.md,
@@ -131,9 +159,10 @@ const createStyles = (colors) => StyleSheet.create({
   },
   listContainer: {
     padding: spacing.md,
+    paddingTop: 0,
   },
   cardWrapper: {
-    backgroundColor: colors.background,
+    backgroundColor: colors.backgroundLight,
   },
   swipeAction: {
     backgroundColor: colors.error,

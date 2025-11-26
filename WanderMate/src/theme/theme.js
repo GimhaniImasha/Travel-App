@@ -9,7 +9,7 @@ export const lightTheme = {
     secondaryLight: '#FFCCBC',
     
     background: '#FFFFFF',
-    backgroundLight: '#F5F5F5',
+    backgroundLight: '#E8F5E9',
     surface: '#F8F9FA',
     
     text: '#212121',
@@ -39,7 +39,7 @@ export const darkTheme = {
     secondaryLight: '#FF7043',
     
     background: '#121212',
-    backgroundLight: '#1E1E1E',
+    backgroundLight: '#1a1f1a',
     surface: '#1E1E1E',
     
     text: '#FFFFFF',

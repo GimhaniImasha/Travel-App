@@ -23,12 +23,10 @@ export default function PlaceCard({ image, title, subtitle, status, onPress }) {
   return (
     <View style={styles.cardWrapper}>
       <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
-        <Image 
-          source={{ uri: imageUrl }} 
+        <Image
+          source={{ uri: imageUrl }}
           style={styles.image}
           resizeMode="cover"
-          onError={(e) => console.log('PlaceCard image error:', imageUrl, e.nativeEvent.error)}
-          onLoad={() => console.log('PlaceCard image loaded successfully:', title)}
         />
         <View style={styles.content}>
           <View style={styles.header}>
@@ -48,17 +46,12 @@ export default function PlaceCard({ image, title, subtitle, status, onPress }) {
 
 const createStyles = (colors) => StyleSheet.create({
   cardWrapper: {
-    backgroundColor: 'rgba(255, 255, 255, 0.35)',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
     borderRadius: 16,
-    padding: 10,
+    padding: 8,
     marginBottom: spacing.md,
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.6)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   card: {
     backgroundColor: colors.surface,
