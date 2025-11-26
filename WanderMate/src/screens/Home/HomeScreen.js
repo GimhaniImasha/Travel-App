@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,94 +7,184 @@ import {
   FlatList,
   StyleSheet,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
-import {
-  searchPlaces,
-  setSelectedPlace,
-} from '../../redux/slices/placesSlice';
+import { Feather } from '@expo/vector-icons';
+import { placesSearch } from '../../api/tapi';
+import PlaceCard from '../../components/PlaceCard';
 import { colors, spacing, fontSize } from '../../theme/theme';
 
 export default function HomeScreen({ navigation }) {
   const [searchQuery, setSearchQuery] = useState('');
-  const dispatch = useDispatch();
-  const { searchResults, status } = useSelector((state) => state.places);
-  const { user } = useSelector((state) => state.auth);
-  
-  const loading = status === 'loading';
+  const [places, setPlaces] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [isSearchActive, setIsSearchActive] = useState(false);
+
+  useEffect(() => {
+    loadRecommendedPlaces();
+  }, []);
+
+  const loadRecommendedPlaces = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const queries = ['museum', 'park', 'landmark'];
+      const results = await Promise.all(
+        queries.map(query => placesSearch(query))
+      );
+      
+      const allPlaces = results.flat();
+      const uniquePlaces = removeDuplicatesByName(allPlaces);
+      
+      setPlaces(uniquePlaces);
+      setIsSearchActive(false);
+    } catch (err) {
+      setError(err.message || 'Failed to load recommended places');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const removeDuplicatesByName = (placesArray) => {
+    const seen = new Set();
+    return placesArray.filter(place => {
+      const name = place.name?.toLowerCase();
+      if (!name || seen.has(name)) return false;
+      seen.add(name);
+      return true;
+    });
+  };
 
   const handleSearch = async () => {
-    if (!searchQuery.trim()) {
-      Alert.alert('Error', 'Please enter a search term');
-      return;
-    }
+    if (!searchQuery.trim()) return;
+
+    setLoading(true);
+    setError(null);
+    setIsSearchActive(true);
 
     try {
-      const resultAction = await dispatch(searchPlaces(searchQuery));
-      
-      if (searchPlaces.rejected.match(resultAction)) {
-        Alert.alert('Search Failed', resultAction.payload || 'Failed to search places');
-      }
-    } catch (error) {
-      Alert.alert('Search Failed', error.message || 'An error occurred');
+      const results = await placesSearch(searchQuery);
+      setPlaces(results);
+    } catch (err) {
+      setError(err.message || 'Search failed');
+      setPlaces([]);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handlePlacePress = (place) => {
-    dispatch(setSelectedPlace(place));
-    navigation.navigate('Details');
+    navigation.navigate('Details', { place });
   };
 
-  const renderPlace = ({ item }) => (
-    <TouchableOpacity
-      style={styles.placeCard}
-      onPress={() => handlePlacePress(item)}
-    >
-      <Text style={styles.placeName}>{item.name || 'Unknown Place'}</Text>
-      <Text style={styles.placeType}>{item.type || 'N/A'}</Text>
-      {item.description && (
-        <Text style={styles.placeDesc} numberOfLines={2}>
-          {item.description}
+  const renderPlace = ({ item }) => {
+    const status = item.type === 'poi' ? 'Popular' : 'Featured';
+    
+    return (
+      <PlaceCard
+        image={`https://picsum.photos/600/400?random=${Math.random()}`}
+        title={item.name}
+        subtitle={item.type || 'Unknown'}
+        status={status}
+        onPress={() => handlePlacePress(item)}
+      />
+    );
+  };
+
+  const renderEmptyState = () => {
+    if (loading) return null;
+    
+    return (
+      <View style={styles.emptyContainer}>
+        <Feather name="map-pin" size={64} color={colors.textSecondary} />
+        <Text style={styles.emptyText}>
+          {isSearchActive ? 'No places found' : 'Search for places to explore'}
         </Text>
-      )}
-    </TouchableOpacity>
+        {isSearchActive && (
+          <TouchableOpacity
+            style={styles.resetButton}
+            onPress={loadRecommendedPlaces}
+          >
+            <Text style={styles.resetButtonText}>View Recommendations</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  };
+
+  const renderErrorState = () => (
+    <View style={styles.emptyContainer}>
+      <Feather name="alert-circle" size={64} color={colors.error} />
+      <Text style={styles.errorText}>{error}</Text>
+      <TouchableOpacity
+        style={styles.retryButton}
+        onPress={isSearchActive ? handleSearch : loadRecommendedPlaces}
+      >
+        <Text style={styles.retryButtonText}>Try Again</Text>
+      </TouchableOpacity>
+    </View>
   );
 
   return (
     <View style={styles.container}>
       <View style={styles.searchContainer}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search for stations, stops..."
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          onSubmitEditing={handleSearch}
-        />
+        <View style={styles.searchInputWrapper}>
+          <Feather name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search museums, parks, landmarks..."
+            placeholderTextColor={colors.textSecondary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onSubmitEditing={handleSearch}
+            returnKeyType="search"
+          />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity
+              onPress={() => {
+                setSearchQuery('');
+                if (isSearchActive) {
+                  loadRecommendedPlaces();
+                }
+              }}
+            >
+              <Feather name="x-circle" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          )}
+        </View>
         <TouchableOpacity
-          style={styles.searchButton}
+          style={[styles.searchButton, loading && styles.searchButtonDisabled]}
           onPress={handleSearch}
-          disabled={loading}
+          disabled={loading || !searchQuery.trim()}
         >
-          <Text style={styles.searchButtonText}>Search</Text>
+          <Feather name="arrow-right" size={20} color={colors.textLight} />
         </TouchableOpacity>
       </View>
+
+      {!isSearchActive && places.length > 0 && (
+        <Text style={styles.sectionTitle}>Recommended Places</Text>
+      )}
 
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.loadingText}>
+            {isSearchActive ? 'Searching...' : 'Loading recommendations...'}
+          </Text>
         </View>
-      ) : searchResults?.length > 0 ? (
+      ) : error ? (
+        renderErrorState()
+      ) : places.length > 0 ? (
         <FlatList
-          data={searchResults}
+          data={places}
           renderItem={renderPlace}
-          keyExtractor={(item, index) => item.id?.toString() || index.toString()}
+          keyExtractor={(item, index) => `${item.name}-${index}`}
           contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
         />
       ) : (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>Search for places to get started!</Text>
-        </View>
+        renderEmptyState()
       )}
     </View>
   );
@@ -109,31 +199,57 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     padding: spacing.md,
     gap: spacing.sm,
+    backgroundColor: colors.surface,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  searchInputWrapper: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    paddingHorizontal: spacing.md,
+  },
+  searchIcon: {
+    marginRight: spacing.sm,
   },
   searchInput: {
     flex: 1,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    padding: spacing.md,
+    padding: spacing.sm,
     fontSize: fontSize.md,
+    color: colors.text,
   },
   searchButton: {
     backgroundColor: colors.primary,
-    paddingHorizontal: spacing.lg,
-    borderRadius: 8,
+    width: 48,
+    height: 48,
+    borderRadius: 12,
     justifyContent: 'center',
+    alignItems: 'center',
   },
-  searchButtonText: {
-    color: colors.textLight,
+  searchButtonDisabled: {
+    opacity: 0.5,
+  },
+  sectionTitle: {
+    fontSize: fontSize.xl,
     fontWeight: 'bold',
-    fontSize: fontSize.md,
+    color: colors.text,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: spacing.md,
+    fontSize: fontSize.md,
+    color: colors.textSecondary,
   },
   emptyContainer: {
     flex: 1,
@@ -145,31 +261,41 @@ const styles = StyleSheet.create({
     fontSize: fontSize.lg,
     color: colors.textSecondary,
     textAlign: 'center',
+    marginTop: spacing.md,
+  },
+  errorText: {
+    fontSize: fontSize.lg,
+    color: colors.error,
+    textAlign: 'center',
+    marginTop: spacing.md,
+  },
+  resetButton: {
+    marginTop: spacing.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+  },
+  resetButtonText: {
+    color: colors.textLight,
+    fontSize: fontSize.md,
+    fontWeight: '600',
+  },
+  retryButton: {
+    marginTop: spacing.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: colors.textLight,
+    fontSize: fontSize.md,
+    fontWeight: '600',
   },
   listContainer: {
     padding: spacing.md,
-  },
-  placeCard: {
-    backgroundColor: colors.surface,
-    padding: spacing.md,
-    borderRadius: 8,
-    marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  placeName: {
-    fontSize: fontSize.lg,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: spacing.xs,
-  },
-  placeType: {
-    fontSize: fontSize.sm,
-    color: colors.primary,
-    marginBottom: spacing.xs,
-  },
-  placeDesc: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
+    paddingBottom: spacing.xl,
   },
 });
+
